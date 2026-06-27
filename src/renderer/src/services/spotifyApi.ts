@@ -2,9 +2,7 @@ import type { SpotifyTrack, SpotifyTokens } from '../types'
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
 
-/**
- * Fetch the currently playing track from Spotify.
- */
+
 export async function fetchCurrentlyPlaying(
   tokens: SpotifyTokens
 ): Promise<SpotifyTrack | null> {
@@ -63,9 +61,7 @@ export async function fetchCurrentlyPlaying(
   }
 }
 
-/**
- * Refresh the Spotify access token using the refresh token.
- */
+
 export async function refreshAccessToken(
   clientId: string,
   refreshToken: string

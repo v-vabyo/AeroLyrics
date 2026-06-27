@@ -66,9 +66,7 @@ async function saveToCache(trackName: string, artistName: string, result: LRCLib
   }
 }
 
-/**
- * Fast Node.js fetch using pure 'https' module (bypasses Chromium completely).
- */
+
 async function nodeFetch(url: string): Promise<{ ok: boolean; status: number; data: string }> {
   return new Promise((resolve, reject) => {
     const req = https.get(url, {
@@ -103,9 +101,7 @@ async function nodeFetch(url: string): Promise<{ ok: boolean; status: number; da
   })
 }
 
-/**
- * Fetch synced lyrics from LRCLIB — runs in Node.js (main process).
- */
+
 export async function fetchLyricsFromMain(
   trackName: string,
   artistName: string,

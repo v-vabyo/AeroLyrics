@@ -1,15 +1,6 @@
 import type { LyricLine } from '../types'
 
-/**
- * Parses LRC formatted string into an array of LyricLine objects.
- * LRC format: [mm:ss.xx]Lyrics text
- *
- * Supports:
- * - Standard timestamps: [01:23.45]
- * - Short timestamps: [1:23.45]
- * - Whole-second timestamps: [01:23]
- * - Multiple timestamps per line: [01:23.45][01:30.00]Lyrics
- */
+
 export function parseLRC(lrcString: string): LyricLine[] {
   if (!lrcString || lrcString.trim().length === 0) {
     return []
@@ -57,10 +48,7 @@ export function parseLRC(lrcString: string): LyricLine[] {
   return result
 }
 
-/**
- * Find the index of the active lyric line based on current playback time.
- * Returns -1 if no line is active yet.
- */
+
 export function findActiveLyricIndex(
   lyrics: LyricLine[],
   currentTime: number

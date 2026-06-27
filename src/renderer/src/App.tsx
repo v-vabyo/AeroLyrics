@@ -79,12 +79,12 @@ const App: React.FC = () => {
         '--border-opacity': bgOpacity > 0 ? 0.1 : 0
       } as React.CSSProperties}
     >
-      {/* Dedicated Drag Handle */}
+      {}
       {!isLocked && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 40, height: 40, zIndex: 10, WebkitAppRegion: 'drag' } as React.CSSProperties} />
       )}
 
-      {/* Custom Title Bar Controls */}
+      {}
       {!isLocked && (
         <div className="window-controls no-drag">
           <button className="control-btn close-btn" onClick={handleClose} title="Close">
@@ -93,7 +93,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Background visualizer */}
+      {}
       <div 
         className="background-blur"
         style={{
@@ -103,7 +103,7 @@ const App: React.FC = () => {
       />
       <div className="background-overlay" />
 
-      {/* Conditional Rendering of Screens */}
+      {}
       {(!isAuthenticated && !authLoading) ? (
         <AuthScreen onLogin={login} isLoading={authLoading} error={authError} isLocked={isLocked} />
       ) : authLoading ? (

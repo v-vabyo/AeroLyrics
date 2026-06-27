@@ -11,18 +11,14 @@ interface SpotifyTokens {
 const CONFIG_DIR = join(app.getPath('userData'), 'config')
 const TOKENS_PATH = join(CONFIG_DIR, 'spotify-tokens.json')
 
-/**
- * Ensure the config directory exists.
- */
+
 function ensureConfigDir(): void {
   if (!existsSync(CONFIG_DIR)) {
     mkdirSync(CONFIG_DIR, { recursive: true })
   }
 }
 
-/**
- * Load saved Spotify tokens from disk.
- */
+
 export function loadTokens(): SpotifyTokens | null {
   try {
     ensureConfigDir()
@@ -42,9 +38,7 @@ export function loadTokens(): SpotifyTokens | null {
   }
 }
 
-/**
- * Save Spotify tokens to disk.
- */
+
 export function saveTokens(tokens: SpotifyTokens): void {
   try {
     ensureConfigDir()
@@ -54,9 +48,7 @@ export function saveTokens(tokens: SpotifyTokens): void {
   }
 }
 
-/**
- * Delete saved tokens (logout).
- */
+
 export function clearTokens(): void {
   try {
     if (existsSync(TOKENS_PATH)) {

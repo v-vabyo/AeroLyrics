@@ -90,7 +90,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
   return (
     <div className="lyrics-container" ref={containerRef}>
       <div className="lyrics-scroll-area">
-        {/* Top spacer to allow first line to be centered */}
+        {}
         <div className="lyrics-spacer" />
 
         {lyrics.map((line, index) => (
@@ -108,11 +108,11 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
           </div>
         ))}
 
-        {/* Bottom spacer to allow last line to be centered */}
+        {}
         <div className="lyrics-spacer" />
       </div>
 
-      {/* Gradient overlays for fade effect */}
+      {}
       <div className="lyrics-fade-top" />
       <div className="lyrics-fade-bottom" />
     </div>

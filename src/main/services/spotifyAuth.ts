@@ -14,9 +14,7 @@ interface SpotifyTokens {
   expiresAt: number
 }
 
-/**
- * Generate PKCE code verifier and challenge.
- */
+
 function generatePKCE(): { verifier: string; challenge: string } {
   const verifier = randomBytes(64)
     .toString('base64url')
@@ -29,10 +27,7 @@ function generatePKCE(): { verifier: string; challenge: string } {
   return { verifier, challenge }
 }
 
-/**
- * Start a temporary HTTP server to capture the OAuth callback,
- * then exchange the code for tokens.
- */
+
 export function startOAuthServer(clientId: string): Promise<SpotifyTokens | null> {
   return new Promise((resolve) => {
     stopOAuthServer()
@@ -117,9 +112,7 @@ export function startOAuthServer(clientId: string): Promise<SpotifyTokens | null
   })
 }
 
-/**
- * Exchange authorization code for access and refresh tokens.
- */
+
 async function exchangeCodeForTokens(
   clientId: string,
   code: string,
@@ -172,9 +165,7 @@ async function exchangeCodeForTokens(
   })
 }
 
-/**
- * Refresh the Spotify access token using the refresh token.
- */
+
 export async function refreshSpotifyToken(
   clientId: string,
   refreshToken: string
@@ -224,9 +215,7 @@ export async function refreshSpotifyToken(
   })
 }
 
-/**
- * Stop the OAuth callback server.
- */
+
 export function stopOAuthServer(): void {
   if (oauthServer) {
     oauthServer.close()
