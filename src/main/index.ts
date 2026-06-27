@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell, screen } from 'electron'
 import { join } from 'node:path'
-import { startOAuthServer, stopOAuthServer } from './services/spotifyAuth'
-import { loadTokens, saveTokens } from './services/tokenStore'
+import { startOAuthServer, stopOAuthServer, refreshSpotifyToken } from './services/spotifyAuth'
+import { loadTokens, saveTokens, clearTokens } from './services/tokenStore'
 import { loadSettings, saveSettings } from './services/settingsStore'
 import { fetchLyricsFromMain } from './services/lrclibMain'
 
@@ -353,18 +353,24 @@ function setupIPC(): void {
   })
 
   // Refresh token IPC
-  ipcMain.handle('refresh-token', async (_, clientId, refreshToken) => {
+  ipcMain.handle('refresh-token', async (_, __, refreshToken) => {
     try {
-      const { refreshSpotifyToken } = require('./services/spotifyAuth')
+      const clientId = (import.meta as any).env.MAIN_VITE_SPOTIFY_CLIENT_ID || ''
+      if (!clientId) throw new Error('Client ID missing')
       const tokens = await refreshSpotifyToken(clientId, refreshToken)
-      // Save tokens
-      const { saveTokens } = require('./services/tokenStore')
-      saveTokens(tokens)
+      if (tokens) {
+        saveTokens(tokens)
+      }
       return tokens
     } catch (error) {
       console.error('[Main] Refresh token failed:', error)
       return null
     }
+  })
+
+  // Logout IPC
+  ipcMain.on('logout', () => {
+    clearTokens()
   })
 
   // Click-Through IPC

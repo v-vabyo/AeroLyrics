@@ -82,5 +82,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
    */
   fetchLyrics: (trackName: string, artistName: string, albumName: string, durationSeconds: number) => ipcRenderer.invoke('fetch-lyrics', trackName, artistName, albumName, durationSeconds),
   refreshToken: (clientId: string, refreshToken: string) => ipcRenderer.invoke('refresh-token', clientId, refreshToken),
-  setClickThrough: (ignore: boolean) => ipcRenderer.send('set-click-through', ignore)
+  setClickThrough: (ignore: boolean) => ipcRenderer.send('set-click-through', ignore),
+  clearTokens: () => ipcRenderer.send('logout')
 })
