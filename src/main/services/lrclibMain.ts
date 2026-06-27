@@ -19,21 +19,16 @@ interface LRCLibResponse {
 
 const getCacheDir = () => join(app.getPath('userData'), 'Lyrics')
 
-// In-memory cache for the main process to avoid constant disk reads
 const memoryCache: Record<string, LRCLibResponse> = {}
 
-// Make sure cache directory exists
 async function ensureCacheDir() {
   try {
     await fs.mkdir(getCacheDir(), { recursive: true })
   } catch (e) {
-    // ignore
   }
 }
 
-// Sanitize string to be a valid Windows filename
 function sanitizeFilename(name: string): string {
-  // Replace < > : " / \ | ? * with underscore
   return name.replace(/[<>:"/\\|?*]+/g, '_').trim()
 }
 
@@ -104,8 +99,6 @@ async function nodeFetch(url: string): Promise<{ ok: boolean; status: number; da
       reject(new Error('The operation was aborted due to timeout'))
     })
     
-    // Some LRCLIB queries genuinely take 8-10 seconds! 
-    // We must allow enough time for the first fetch, then cache will make it 0ms.
     req.setTimeout(15000)
   })
 }
@@ -121,7 +114,6 @@ export async function fetchLyricsFromMain(
 ): Promise<LRCLibResponse | null> {
   const startTime = Date.now()
 
-  // 1. Check local file cache first (INSTANT)
   const cached = await loadFromCache(trackName, artistName)
   if (cached) {
     console.log(`[LRCLIB-Main] ✓ Loaded lyrics from LOCAL CACHE for "${trackName}" (0ms)`)
@@ -130,8 +122,6 @@ export async function fetchLyricsFromMain(
 
   console.log(`[LRCLIB-Main] Fetching lyrics from network for "${trackName}" by "${artistName}"...`)
 
-  // Hardcoded overrides for tracks where LRCLIB has bad/inaccurate official data.
-  // E.g., Sunset Di Tanah Anarki's default match is 14s off sync.
   const TRACK_OVERRIDES: Record<string, number> = {
     'Sunset Di Tanah Anarki|Superman Is Dead': 34057882
   }
@@ -166,8 +156,6 @@ export async function fetchLyricsFromMain(
     const getPromise = fetchGet(getUrl)
     const searchPromise = fetchSearch(searchUrl, durationSeconds)
 
-    // Prefer /api/get because it does sophisticated exact matching on LRCLIB's end.
-    // Racing it with /api/search often results in picking bad community-uploaded data.
     const getResult = await getPromise
     if (getResult && getResult.syncedLyrics && Math.abs(getResult.duration - durationSeconds) <= 1) {
       console.log(`[LRCLIB-Main] ✓ Got synced lyrics via /get in ${Date.now() - startTime}ms`)
@@ -175,7 +163,6 @@ export async function fetchLyricsFromMain(
       return getResult
     }
 
-    // Fallback to search if get fails or has no synced lyrics
     const searchResult = await searchPromise
     if (searchResult && searchResult.syncedLyrics && Math.abs(searchResult.duration - durationSeconds) <= 1) {
       console.log(`[LRCLIB-Main] ✓ Got synced lyrics via /search in ${Date.now() - startTime}ms`)
@@ -183,7 +170,6 @@ export async function fetchLyricsFromMain(
       return searchResult
     }
 
-    // Both failed to provide synced lyrics. Fall back to plain lyrics.
     if (getResult && getResult.plainLyrics) {
       console.log(`[LRCLIB-Main] ✓ Got plain lyrics via /get in ${Date.now() - startTime}ms`)
       await saveToCache(trackName, artistName, getResult)
@@ -231,9 +217,6 @@ async function fetchSearch(url: string, expectedDuration: number): Promise<LRCLi
     const results = JSON.parse(res.data) as LRCLibResponse[]
     console.log(`[LRCLIB-Search] Found ${results.length} results`)
     
-    // Filter results so that tracks with duration closest to expectedDuration come first
-    // We strictly filter out any result that is more than 1 second off.
-    // The user requested EXACT matching to prevent even slight lyric desyncs.
     const validResults = results
       .filter((r) => Math.abs(r.duration - expectedDuration) <= 1)
       .sort((a, b) => Math.abs(a.duration - expectedDuration) - Math.abs(b.duration - expectedDuration))
@@ -242,8 +225,6 @@ async function fetchSearch(url: string, expectedDuration: number): Promise<LRCLi
       return validResults.find((r) => r.syncedLyrics) || validResults[0]
     }
 
-    // If no results are within 5 seconds, it's dangerous to use synced lyrics.
-    // We fall back to the absolute closest match but strip the synced lyrics.
     results.sort((a, b) => Math.abs(a.duration - expectedDuration) - Math.abs(b.duration - expectedDuration))
     const closest = results[0]
     if (closest) {

@@ -20,7 +20,6 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // For interpolating progress between polls
   const [currentTimeMs, setCurrentTimeMs] = useState(0)
   const lastPollTimeRef = useRef<number>(0)
   const lastProgressRef = useRef<number>(0)
@@ -29,7 +28,6 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
   const lastApiTimestampRef = useRef<number>(0)
   const isRefreshingRef = useRef<boolean>(false)
 
-  // Load saved tokens on mount
   useEffect(() => {
     async function loadTokens() {
       try {
@@ -45,7 +43,6 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
     }
     loadTokens()
 
-    // Listen for token updates from OAuth flow
     const unsubscribe = window.electronAPI.onTokensUpdated((newTokens: SpotifyTokens) => {
       setTokens(newTokens)
       setError(null)
@@ -56,11 +53,9 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
     }
   }, [])
 
-  // Poll Spotify for currently playing track
   const pollCurrentlyPlaying = useCallback(async () => {
     if (!tokens) return
 
-    // Check if token needs refresh
     if (Date.now() >= tokens.expiresAt - 60000) {
       if (isRefreshingRef.current) return // Prevent concurrent refreshes
       
@@ -71,7 +66,6 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
           setTokens(refreshed)
           return // Will poll again on next interval with new tokens
         } else {
-          // If refresh completely fails, logout
           setError('Session expired. Please reconnect.')
           setTokens(null)
           window.electronAPI.clearTokens()
@@ -89,11 +83,9 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
 
     if (currentTrack) {
       setTrack((prev) => {
-        // Only update if track changed
         if (!prev || prev.id !== currentTrack.id) {
           return currentTrack
         }
-        // Update progress and playing state
         return {
           ...prev,
           progressMs: currentTrack.progressMs,
@@ -101,23 +93,18 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
         }
       })
 
-      // Reject stale cached responses that would cause the lyrics to jump backwards.
-      // Spotify's API often returns cached results for 2-3 seconds after a seek.
       if (!currentTrack.timestamp || currentTrack.timestamp >= lastApiTimestampRef.current) {
         if (currentTrack.timestamp) {
           lastApiTimestampRef.current = currentTrack.timestamp
         }
         
-        // Update interpolation refs
         lastPollTimeRef.current = fetchEnd
-        // Compensate for network latency: track kept playing while response traveled to us
         lastProgressRef.current = currentTrack.progressMs + (currentTrack.isPlaying ? networkLatency : 0)
         isPlayingRef.current = currentTrack.isPlaying
       }
 
       setError(null)
     } else {
-      // Nothing playing or error
       setTrack((prev) => {
         if (prev) {
           return { ...prev, isPlaying: false }
@@ -128,11 +115,9 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
     }
   }, [tokens])
 
-  // Set up polling interval
   useEffect(() => {
     if (!tokens) return
 
-    // Initial poll
     pollCurrentlyPlaying()
 
     const intervalId = setInterval(pollCurrentlyPlaying, POLL_INTERVAL)
@@ -140,7 +125,6 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
     return () => clearInterval(intervalId)
   }, [tokens, pollCurrentlyPlaying])
 
-  // Interpolate progress using requestAnimationFrame for smooth sync
   useEffect(() => {
     function updateProgress() {
       if (isPlayingRef.current && lastPollTimeRef.current > 0) {

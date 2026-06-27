@@ -19,7 +19,6 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map())
 
-  // Smooth scroll to active lyric
   useEffect(() => {
     if (activeIndex < 0 || !containerRef.current) return
 
@@ -32,7 +31,6 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
     }
   }, [activeIndex])
 
-  // Calculate opacity for each line based on distance from active
   const getLineStyle = useMemo(() => {
     return (index: number) => {
       if (activeIndex < 0) {
@@ -41,7 +39,6 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
 
       const distance = Math.abs(index - activeIndex)
 
-      // Hide anything beyond 1 line away (showing previous, current, next)
       if (distance > 1) {
         return { opacity: 0, pointerEvents: 'none' }
       }
@@ -50,7 +47,6 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
         return { opacity: 1, transform: 'scale(1.05)' }
       }
 
-      // Gradual fade for the immediate previous/next line
       return {
         opacity: 0.3,
         transform: 'scale(0.95)'

@@ -5,11 +5,9 @@ import { loadTokens, saveTokens, clearTokens } from './services/tokenStore'
 import { loadSettings, saveSettings } from './services/settingsStore'
 import { fetchLyricsFromMain } from './services/lrclibMain'
 
-// Set app name and userData path explicitly to prevent development tools or other Electron apps from wiping the cache
 app.setName('AeroLyrics')
 app.setPath('userData', join(app.getPath('appData'), 'AeroLyrics'))
 
-  // (Hardware acceleration is left enabled as disabling it can cause invisible windows on some systems)
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -44,26 +42,20 @@ function createWindow(): void {
     }
   })
 
-  // We no longer use setIgnoreMouseEvents for the lock feature, 
-  // so the window always receives mouse events.
   mainWindow.setIgnoreMouseEvents(false)
 
-  // Position at bottom-right of primary display
   const primaryDisplay = screen.getPrimaryDisplay()
   const { width, height } = primaryDisplay.workAreaSize
   
-  // Prevent default close to keep app running in tray (optional, but standard for widgets)
   mainWindow.on('close', () => {
     if (mainWindow && !mainWindow.isMinimized()) {
       const bounds = mainWindow.getBounds()
-      // Only save if the bounds look sane (not minimized to -32000)
       if (bounds && bounds.x > -10000 && bounds.y > -10000) {
         saveSettings({ windowPosition: { x: bounds.x, y: bounds.y } })
       }
     }
   })
 
-  // Prevent dragging outside of screen work area (respecting taskbar)
   const snapToEdges = () => {
     if (!mainWindow || !mainWindow.isVisible() || mainWindow.isMinimized()) return
     const display = screen.getPrimaryDisplay()
@@ -102,17 +94,13 @@ function createWindow(): void {
     }
   }
 
-  // Windows sometimes fails to fire 'moved' reliably for frameless windows.
-  // We use a low-overhead interval to guarantee bounds are respected.
   setInterval(snapToEdges, 100)
 
   mainWindow.on('minimize', () => {
-    // Normal minimize
   })
 
   mainWindow.setAlwaysOnTop(true, 'screen-saver')
   
-  // Set initial click-through state if needed
   if (isClickThrough) {
     mainWindow.setIgnoreMouseEvents(true, { forward: true })
   }
@@ -131,14 +119,12 @@ function createWindow(): void {
     mainWindow.setPosition(startX, startY)
   }
 
-  // Load the renderer
   if (process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
   
-  // Force show
   mainWindow.show()
 
   mainWindow.on('closed', () => {
@@ -148,7 +134,6 @@ function createWindow(): void {
 
 function createTray(): void {
   const iconPath = join(__dirname, '../../resources/icon.png')
-  // Use the native image to preserve transparency and scale automatically
   const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
 
   tray = new Tray(trayIcon)
@@ -241,8 +226,6 @@ function updateTrayMenu(): void {
         saveSettings({ isLocked: isClickThrough })
         
         if (mainWindow) {
-          // We no longer use setIgnoreMouseEvents(true) because we want buttons to remain clickable.
-          // Lock state is handled purely by renderer CSS (-webkit-app-region: drag vs no-drag).
           mainWindow.setIgnoreMouseEvents(false)
           mainWindow.webContents.send('click-through-changed', isClickThrough)
         }
@@ -290,7 +273,6 @@ async function startSpotifyOAuth(): Promise<{ success: boolean; error?: string }
       saveTokens(tokens)
       mainWindow?.webContents.send('tokens-updated', tokens)
       
-      // Don't enable click-through immediately so user can drag the window first
       isClickThrough = false
       mainWindow?.setIgnoreMouseEvents(false)
       mainWindow?.webContents.send('click-through-changed', false)
@@ -305,7 +287,6 @@ async function startSpotifyOAuth(): Promise<{ success: boolean; error?: string }
   }
 }
 
-// ---- IPC Handlers ----
 
 function setupIPC(): void {
 
@@ -328,8 +309,6 @@ function setupIPC(): void {
     saveSettings({ isLocked: isClickThrough })
     
     if (mainWindow) {
-      // We no longer use setIgnoreMouseEvents because the user wants buttons to be clickable.
-      // Drag is disabled via CSS (-webkit-app-region: no-drag) in the renderer.
       mainWindow.setIgnoreMouseEvents(false)
       mainWindow.webContents.send('click-through-changed', isClickThrough)
     }
@@ -352,7 +331,6 @@ function setupIPC(): void {
     mainWindow?.setPosition(Math.round(x), Math.round(y))
   })
 
-  // Refresh token IPC
   ipcMain.handle('refresh-token', async (_, __, refreshToken) => {
     try {
       const clientId = (import.meta as any).env.MAIN_VITE_SPOTIFY_CLIENT_ID || ''
@@ -368,12 +346,10 @@ function setupIPC(): void {
     }
   })
 
-  // Logout IPC
   ipcMain.on('logout', () => {
     clearTokens()
   })
 
-  // Click-Through IPC
   ipcMain.on('set-click-through', (_, ignore) => {
     isClickThrough = ignore
     if (mainWindow) {
@@ -382,13 +358,11 @@ function setupIPC(): void {
     updateTrayMenu()
   })
 
-  // Fast lyrics fetching via Node.js main process (no CORS overhead)
   ipcMain.handle('fetch-lyrics', async (_event, trackName: string, artistName: string, albumName: string, durationSeconds: number) => {
     return await fetchLyricsFromMain(trackName, artistName, albumName, durationSeconds)
   })
 }
 
-// ---- App Lifecycle ----
 
 app.whenReady().then(() => {
   const settings = loadSettings()

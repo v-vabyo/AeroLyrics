@@ -3,8 +3,6 @@ import type { SpotifyTrack, LyricLine } from '../types'
 import { fetchLyrics } from '../services/lrclibApi'
 import { parseLRC, findActiveLyricIndex } from '../services/lrcParser'
 
-// In-memory lyrics cache: trackId → parsed lyrics
-// Persists across re-renders so replayed songs load instantly
 const lyricsCache = new Map<string, LyricLine[]>()
 
 interface UseLyricSyncReturn {
@@ -25,18 +23,15 @@ export function useLyricSync(
   const lastTrackIdRef = useRef<string>('')
   const abortRef = useRef<AbortController | null>(null)
 
-  // Fetch lyrics when track changes
   useEffect(() => {
     if (!track || track.id === lastTrackIdRef.current) return
 
     lastTrackIdRef.current = track.id
 
-    // Cancel any in-flight fetch from previous track
     if (abortRef.current) {
       abortRef.current.abort()
     }
 
-    // Check cache first — instant load!
     const cached = lyricsCache.get(track.id)
     if (cached) {
       console.log(`[LyricSync] Cache HIT for "${track.name}" (${cached.length} lines)`)
@@ -46,7 +41,6 @@ export function useLyricSync(
       return
     }
 
-    // Cache miss — fetch from LRCLIB
     console.log(`[LyricSync] Cache MISS for "${track.name}", fetching...`)
     setIsLoading(true)
     setError(null)
@@ -60,7 +54,6 @@ export function useLyricSync(
 
     fetchLyrics(track.name, track.artist, track.album, durationSeconds)
       .then((response) => {
-        // Don't update if this track is no longer current
         if (controller.signal.aborted) return
 
         if (response?.syncedLyrics) {
@@ -68,7 +61,6 @@ export function useLyricSync(
           lyricsCache.set(trackId, parsed) // Cache it
           setLyrics(parsed)
         } else if (response?.plainLyrics) {
-          // Plain lyrics without timing — display as static text
           const lines = response.plainLyrics.split('\n').filter((l) => l.trim())
           const parsed = lines.map((text, i) => ({ time: i * 5, text }))
           lyricsCache.set(trackId, parsed) // Cache it
@@ -94,7 +86,6 @@ export function useLyricSync(
     }
   }, [track?.id, track?.name, track?.artist, track?.album, track?.durationMs])
 
-  // Find active lyric index based on current time
   const currentTimeSec = currentTimeMs / 1000
   const activeIndex = useMemo(
     () => findActiveLyricIndex(lyrics, currentTimeSec),

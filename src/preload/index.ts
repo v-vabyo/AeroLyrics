@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-// Type for tokens
 interface SpotifyTokens {
   accessToken: string
   refreshToken: string

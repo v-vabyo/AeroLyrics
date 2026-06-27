@@ -23,7 +23,6 @@ export function parseLRC(lrcString: string): LyricLine[] {
     const trimmedLine = line.trim()
     if (!trimmedLine) continue
 
-    // Extract all timestamps from the line
     const timestamps: number[] = []
     let match: RegExpExecArray | null
 
@@ -38,26 +37,21 @@ export function parseLRC(lrcString: string): LyricLine[] {
       timestamps.push(totalSeconds)
     }
 
-    // Reset regex lastIndex
     timeRegex.lastIndex = 0
 
     if (timestamps.length === 0) continue
 
-    // Extract the text part (everything after the last timestamp)
     const text = trimmedLine
       .replace(/\[\d{1,2}:\d{2}(?:\.\d{1,3})?\]/g, '')
       .trim()
 
-    // Skip metadata lines like [ti:Title], [ar:Artist], etc.
     if (/^\[(?:ti|ar|al|by|offset|re|ve):/.test(trimmedLine)) continue
 
-    // Create a lyric line for each timestamp (handles multi-timestamp lines)
     for (const time of timestamps) {
       result.push({ time, text })
     }
   }
 
-  // Sort by timestamp
   result.sort((a, b) => a.time - b.time)
 
   return result
@@ -73,7 +67,6 @@ export function findActiveLyricIndex(
 ): number {
   if (lyrics.length === 0) return -1
 
-  // Binary search for the last line whose time <= currentTime
   let low = 0
   let high = lyrics.length - 1
   let result = -1

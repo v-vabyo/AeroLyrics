@@ -18,7 +18,6 @@ interface SpotifyTokens {
  * Generate PKCE code verifier and challenge.
  */
 function generatePKCE(): { verifier: string; challenge: string } {
-  // Use 64 bytes to guarantee a length > 43 after base64url encoding
   const verifier = randomBytes(64)
     .toString('base64url')
     .substring(0, 128)
@@ -36,7 +35,6 @@ function generatePKCE(): { verifier: string; challenge: string } {
  */
 export function startOAuthServer(clientId: string): Promise<SpotifyTokens | null> {
   return new Promise((resolve) => {
-    // Stop any existing server
     stopOAuthServer()
 
     const { verifier, challenge } = generatePKCE()
@@ -72,7 +70,6 @@ export function startOAuthServer(clientId: string): Promise<SpotifyTokens | null
           return
         }
 
-        // Exchange code for tokens
         try {
           const tokens = await exchangeCodeForTokens(clientId, code, verifier)
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
@@ -99,7 +96,6 @@ export function startOAuthServer(clientId: string): Promise<SpotifyTokens | null
     })
 
     oauthServer.listen(8888, '127.0.0.1', () => {
-      // Build authorization URL
       const authUrl = new URL('https://accounts.spotify.com/authorize')
       authUrl.searchParams.set('client_id', clientId)
       authUrl.searchParams.set('response_type', 'code')
@@ -109,11 +105,9 @@ export function startOAuthServer(clientId: string): Promise<SpotifyTokens | null
       authUrl.searchParams.set('code_challenge', challenge)
       authUrl.searchParams.set('state', state)
 
-      // Open in user's default browser
       shell.openExternal(authUrl.toString())
     })
 
-    // Timeout after 5 minutes
     setTimeout(() => {
       if (oauthServer) {
         stopOAuthServer()
@@ -214,7 +208,6 @@ export async function refreshSpotifyToken(
             const data = JSON.parse(body)
             resolve({
               accessToken: data.access_token,
-              // Spotify might not always return a new refresh token. If it doesn't, keep the old one.
               refreshToken: data.refresh_token || refreshToken,
               expiresAt: Date.now() + data.expires_in * 1000
             })

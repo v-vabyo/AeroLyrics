@@ -31,7 +31,6 @@ export function loadTokens(): SpotifyTokens | null {
     const data = readFileSync(TOKENS_PATH, 'utf-8')
     const tokens = JSON.parse(data) as SpotifyTokens
 
-    // Validate structure
     if (!tokens.accessToken || !tokens.refreshToken || !tokens.expiresAt) {
       return null
     }

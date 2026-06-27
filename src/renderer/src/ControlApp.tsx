@@ -20,8 +20,6 @@ export default function ControlApp() {
     }
   }
 
-  // The controlWindow is now permanently exactly 32x32 pixels.
-  // Its position relative to mainWindow is synced by the main process.
   return (
     <div 
       style={{ 

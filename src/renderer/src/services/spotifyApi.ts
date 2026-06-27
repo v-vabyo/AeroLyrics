@@ -9,7 +9,6 @@ export async function fetchCurrentlyPlaying(
   tokens: SpotifyTokens
 ): Promise<SpotifyTrack | null> {
   try {
-    // Check if token is expired and needs refresh
     if (Date.now() >= tokens.expiresAt) {
       return null // Signal that token refresh is needed
     }
@@ -23,13 +22,11 @@ export async function fetchCurrentlyPlaying(
     const requestEndTime = Date.now()
     const latency = (requestEndTime - requestStartTime) / 2
 
-    // 204 = no content (nothing playing)
     if (response.status === 204) {
       return null
     }
 
     if (response.status === 401) {
-      // Token expired
       return null
     }
 
@@ -40,7 +37,6 @@ export async function fetchCurrentlyPlaying(
 
     const data = await response.json()
 
-    // Only handle tracks (not episodes/podcasts)
     if (!data || data.currently_playing_type !== 'track' || !data.item) {
       return null
     }
@@ -57,7 +53,6 @@ export async function fetchCurrentlyPlaying(
           ? track.album.images[track.album.images.length > 1 ? 1 : 0].url
           : '',
       durationMs: track.duration_ms,
-      // Add latency to progress to account for network delay
       progressMs: (data.progress_ms || 0) + (data.is_playing ? latency : 0),
       isPlaying: data.is_playing || false,
       timestamp: data.timestamp // Export timestamp to detect stale cached responses
