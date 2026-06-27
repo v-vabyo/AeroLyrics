@@ -81,6 +81,7 @@ async function nodeFetch(url: string): Promise<{ ok: boolean; status: number; da
         'User-Agent': USER_AGENT
       }
     }, (res) => {
+      res.setEncoding('utf8')
       let data = ''
       res.on('data', (chunk) => {
         data += chunk
