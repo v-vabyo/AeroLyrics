@@ -58,12 +58,12 @@ export function useLyricSync(
 
         if (response?.syncedLyrics) {
           const parsed = parseLRC(response.syncedLyrics)
-          lyricsCache.set(trackId, parsed) // Cache it
+          lyricsCache.set(trackId, parsed)
           setLyrics(parsed)
         } else if (response?.plainLyrics) {
           const lines = response.plainLyrics.split('\n').filter((l) => l.trim())
           const parsed = lines.map((text, i) => ({ time: i * 5, text }))
-          lyricsCache.set(trackId, parsed) // Cache it
+          lyricsCache.set(trackId, parsed)
           setLyrics(parsed)
         } else {
           setLyrics([])

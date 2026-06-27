@@ -10,7 +10,7 @@ export async function fetchCurrentlyPlaying(
 ): Promise<SpotifyTrack | null> {
   try {
     if (Date.now() >= tokens.expiresAt) {
-      return null // Signal that token refresh is needed
+      return null
     }
 
     const requestStartTime = Date.now()
@@ -55,7 +55,7 @@ export async function fetchCurrentlyPlaying(
       durationMs: track.duration_ms,
       progressMs: (data.progress_ms || 0) + (data.is_playing ? latency : 0),
       isPlaying: data.is_playing || false,
-      timestamp: data.timestamp // Export timestamp to detect stale cached responses
+      timestamp: data.timestamp
     }
   } catch (error) {
     console.error('Failed to fetch currently playing:', error)

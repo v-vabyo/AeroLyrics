@@ -11,7 +11,7 @@ app.setPath('userData', join(app.getPath('appData'), 'AeroLyrics'))
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
-let isClickThrough = false // Will be initialized from settings
+let isClickThrough = false
 let currentOpacity = 0.78
 
 function createWindow(): void {
@@ -38,7 +38,7 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      webSecurity: false  // Allow cross-origin requests to LRCLIB & Spotify APIs
+      webSecurity: false
     }
   })
 

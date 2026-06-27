@@ -3,7 +3,7 @@ import type { SpotifyTrack, SpotifyTokens } from '../types'
 import { fetchCurrentlyPlaying } from '../services/spotifyApi'
 
 const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || ''
-const POLL_INTERVAL = 1000 // 1 second — fast detection for track changes
+const POLL_INTERVAL = 1000
 
 interface UseSpotifyPlayerReturn {
   track: SpotifyTrack | null
@@ -57,14 +57,14 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
     if (!tokens) return
 
     if (Date.now() >= tokens.expiresAt - 60000) {
-      if (isRefreshingRef.current) return // Prevent concurrent refreshes
+      if (isRefreshingRef.current) return
       
       isRefreshingRef.current = true
       try {
         const refreshed = await window.electronAPI.refreshToken(SPOTIFY_CLIENT_ID, tokens.refreshToken)
         if (refreshed) {
           setTokens(refreshed)
-          return // Will poll again on next interval with new tokens
+          return
         } else {
           setError('Session expired. Please reconnect.')
           setTokens(null)
