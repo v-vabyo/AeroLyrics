@@ -45,6 +45,8 @@ export interface ElectronAPI {
   setWindowPosition: (x: number, y: number) => void
   fetchLyrics: (trackName: string, artistName: string, albumName: string, durationSeconds: number) => Promise<LRCLibResponse | null>
   closeWindow: () => void
+  refreshToken: (clientId: string, refreshToken: string) => Promise<SpotifyTokens | null>
+  clearTokens: () => void
 }
 
 declare global {

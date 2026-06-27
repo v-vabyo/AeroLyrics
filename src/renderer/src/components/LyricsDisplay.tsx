@@ -40,7 +40,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
       const distance = Math.abs(index - activeIndex)
 
       if (distance > 1) {
-        return { opacity: 0, pointerEvents: 'none' }
+        return { opacity: 0, pointerEvents: 'none' as const }
       }
 
       if (distance === 0) {
