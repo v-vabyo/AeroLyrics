@@ -53,6 +53,14 @@ const App: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
+    if (!isAuthenticated && !authLoading && isLocked) {
+      if (window.electronAPI && window.electronAPI.toggleClickThrough) {
+        window.electronAPI.toggleClickThrough(false);
+      }
+    }
+  }, [isAuthenticated, authLoading, isLocked]);
+
+  React.useEffect(() => {
     if (isLocked) {
       document.body.classList.add("is-locked");
     } else {
