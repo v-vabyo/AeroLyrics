@@ -1,60 +1,56 @@
-import { app } from 'electron'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { app } from "electron";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 
 interface SpotifyTokens {
-  accessToken: string
-  refreshToken: string
-  expiresAt: number
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
 }
 
-const CONFIG_DIR = join(app.getPath('userData'), 'config')
-const TOKENS_PATH = join(CONFIG_DIR, 'spotify-tokens.json')
-
+const CONFIG_DIR = join(app.getPath("userData"), "config");
+const TOKENS_PATH = join(CONFIG_DIR, "spotify-tokens.json");
 
 function ensureConfigDir(): void {
   if (!existsSync(CONFIG_DIR)) {
-    mkdirSync(CONFIG_DIR, { recursive: true })
+    mkdirSync(CONFIG_DIR, { recursive: true });
   }
 }
-
 
 export function loadTokens(): SpotifyTokens | null {
   try {
-    ensureConfigDir()
-    if (!existsSync(TOKENS_PATH)) return null
+    ensureConfigDir();
+    if (!existsSync(TOKENS_PATH)) return null;
 
-    const data = readFileSync(TOKENS_PATH, 'utf-8')
-    const tokens = JSON.parse(data) as SpotifyTokens
+    const data = readFileSync(TOKENS_PATH, "utf-8");
+    const tokens = JSON.parse(data) as SpotifyTokens;
 
     if (!tokens.accessToken || !tokens.refreshToken || !tokens.expiresAt) {
-      return null
+      return null;
     }
 
-    return tokens
+    return tokens;
   } catch {
-    console.error('Failed to load tokens')
-    return null
+    console.error("Failed to load tokens");
+    return null;
   }
 }
-
 
 export function saveTokens(tokens: SpotifyTokens): void {
   try {
-    ensureConfigDir()
-    writeFileSync(TOKENS_PATH, JSON.stringify(tokens, null, 2), 'utf-8')
+    ensureConfigDir();
+    writeFileSync(TOKENS_PATH, JSON.stringify(tokens, null, 2), "utf-8");
   } catch {
-    console.error('Failed to save tokens')
+    console.error("Failed to save tokens");
   }
 }
-
 
 export function clearTokens(): void {
   try {
     if (existsSync(TOKENS_PATH)) {
-      writeFileSync(TOKENS_PATH, '', 'utf-8')
+      writeFileSync(TOKENS_PATH, "", "utf-8");
     }
   } catch {
-    console.error('Failed to clear tokens')
+    console.error("Failed to clear tokens");
   }
 }

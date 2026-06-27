@@ -1,225 +1,236 @@
-import { createServer, IncomingMessage, ServerResponse, Server } from 'node:http'
-import { shell } from 'electron'
-import { randomBytes, createHash } from 'node:crypto'
-import { URL } from 'node:url'
+import {
+  createServer,
+  IncomingMessage,
+  ServerResponse,
+  Server,
+} from "node:http";
+import { shell } from "electron";
+import { randomBytes, createHash } from "node:crypto";
+import { URL } from "node:url";
 
-const REDIRECT_URI = 'http://127.0.0.1:8888/callback'
-const SCOPES = 'user-read-currently-playing user-read-playback-state'
+const REDIRECT_URI = "http://127.0.0.1:8888/callback";
+const SCOPES = "user-read-currently-playing user-read-playback-state";
 
-let oauthServer: Server | null = null
+let oauthServer: Server | null = null;
 
 interface SpotifyTokens {
-  accessToken: string
-  refreshToken: string
-  expiresAt: number
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
 }
-
 
 function generatePKCE(): { verifier: string; challenge: string } {
-  const verifier = randomBytes(64)
-    .toString('base64url')
-    .substring(0, 128)
+  const verifier = randomBytes(64).toString("base64url").substring(0, 128);
 
-  const challenge = createHash('sha256')
-    .update(verifier)
-    .digest('base64url')
+  const challenge = createHash("sha256").update(verifier).digest("base64url");
 
-  return { verifier, challenge }
+  return { verifier, challenge };
 }
 
-
-export function startOAuthServer(clientId: string): Promise<SpotifyTokens | null> {
+export function startOAuthServer(
+  clientId: string,
+): Promise<SpotifyTokens | null> {
   return new Promise((resolve) => {
-    stopOAuthServer()
+    stopOAuthServer();
 
-    const { verifier, challenge } = generatePKCE()
-    const state = randomBytes(16).toString('hex')
+    const { verifier, challenge } = generatePKCE();
+    const state = randomBytes(16).toString("hex");
 
-    oauthServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-      if (!req.url) {
-        res.writeHead(400)
-        res.end('Bad request')
-        return
-      }
-
-      const url = new URL(req.url, `http://127.0.0.1:8888`)
-
-      if (url.pathname === '/callback') {
-        const code = url.searchParams.get('code')
-        const returnedState = url.searchParams.get('state')
-        const error = url.searchParams.get('error')
-
-        if (error) {
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-          res.end(getErrorHTML(error))
-          stopOAuthServer()
-          resolve(null)
-          return
+    oauthServer = createServer(
+      async (req: IncomingMessage, res: ServerResponse) => {
+        if (!req.url) {
+          res.writeHead(400);
+          res.end("Bad request");
+          return;
         }
 
-        if (!code || returnedState !== state) {
-          res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-          res.end(getErrorHTML('Invalid state or missing code'))
-          stopOAuthServer()
-          resolve(null)
-          return
+        const url = new URL(req.url, `http://127.0.0.1:8888`);
+
+        if (url.pathname === "/callback") {
+          const code = url.searchParams.get("code");
+          const returnedState = url.searchParams.get("state");
+          const error = url.searchParams.get("error");
+
+          if (error) {
+            res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+            res.end(getErrorHTML(error));
+            stopOAuthServer();
+            resolve(null);
+            return;
+          }
+
+          if (!code || returnedState !== state) {
+            res.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
+            res.end(getErrorHTML("Invalid state or missing code"));
+            stopOAuthServer();
+            resolve(null);
+            return;
+          }
+
+          try {
+            const tokens = await exchangeCodeForTokens(
+              clientId,
+              code,
+              verifier,
+            );
+            res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+            res.end(getSuccessHTML());
+            stopOAuthServer();
+            resolve(tokens);
+          } catch (err) {
+            console.error("[OAuth] Token exchange failed:", err);
+            res.writeHead(500, { "Content-Type": "text/html; charset=utf-8" });
+            res.end(getErrorHTML("Token exchange failed"));
+            stopOAuthServer();
+            resolve(null);
+          }
+        } else {
+          res.writeHead(404);
+          res.end("Not found");
         }
+      },
+    );
 
-        try {
-          const tokens = await exchangeCodeForTokens(clientId, code, verifier)
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-          res.end(getSuccessHTML())
-          stopOAuthServer()
-          resolve(tokens)
-        } catch (err) {
-          console.error('[OAuth] Token exchange failed:', err)
-          res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' })
-          res.end(getErrorHTML('Token exchange failed'))
-          stopOAuthServer()
-          resolve(null)
+    oauthServer.on("error", (err: any) => {
+      console.error("[OAuth] Server error:", err);
+      stopOAuthServer();
+      resolve(null);
+    });
+
+    oauthServer.listen(8888, "127.0.0.1", () => {
+      const authUrl = new URL("https://accounts.spotify.com/authorize");
+      authUrl.searchParams.set("client_id", clientId);
+      authUrl.searchParams.set("response_type", "code");
+      authUrl.searchParams.set("redirect_uri", REDIRECT_URI);
+      authUrl.searchParams.set("scope", SCOPES);
+      authUrl.searchParams.set("code_challenge_method", "S256");
+      authUrl.searchParams.set("code_challenge", challenge);
+      authUrl.searchParams.set("state", state);
+
+      shell.openExternal(authUrl.toString());
+    });
+
+    setTimeout(
+      () => {
+        if (oauthServer) {
+          stopOAuthServer();
+          resolve(null);
         }
-      } else {
-        res.writeHead(404)
-        res.end('Not found')
-      }
-    })
-
-    oauthServer.on('error', (err: any) => {
-      console.error('[OAuth] Server error:', err)
-      stopOAuthServer()
-      resolve(null)
-    })
-
-    oauthServer.listen(8888, '127.0.0.1', () => {
-      const authUrl = new URL('https://accounts.spotify.com/authorize')
-      authUrl.searchParams.set('client_id', clientId)
-      authUrl.searchParams.set('response_type', 'code')
-      authUrl.searchParams.set('redirect_uri', REDIRECT_URI)
-      authUrl.searchParams.set('scope', SCOPES)
-      authUrl.searchParams.set('code_challenge_method', 'S256')
-      authUrl.searchParams.set('code_challenge', challenge)
-      authUrl.searchParams.set('state', state)
-
-      shell.openExternal(authUrl.toString())
-    })
-
-    setTimeout(() => {
-      if (oauthServer) {
-        stopOAuthServer()
-        resolve(null)
-      }
-    }, 5 * 60 * 1000)
-  })
+      },
+      5 * 60 * 1000,
+    );
+  });
 }
-
 
 async function exchangeCodeForTokens(
   clientId: string,
   code: string,
-  codeVerifier: string
+  codeVerifier: string,
 ): Promise<SpotifyTokens> {
   return new Promise((resolve, reject) => {
-    const { request } = require('https')
+    const { request } = require("https");
     const postData = new URLSearchParams({
       client_id: clientId,
-      grant_type: 'authorization_code',
+      grant_type: "authorization_code",
       code,
       redirect_uri: REDIRECT_URI,
-      code_verifier: codeVerifier
-    }).toString()
+      code_verifier: codeVerifier,
+    }).toString();
 
     const req = request(
-      'https://accounts.spotify.com/api/token',
+      "https://accounts.spotify.com/api/token",
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData)
-        }
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Length": Buffer.byteLength(postData),
+        },
       },
       (res: IncomingMessage) => {
-        let body = ''
-        res.on('data', (chunk: Buffer) => (body += chunk))
-        res.on('end', () => {
+        let body = "";
+        res.on("data", (chunk: Buffer) => (body += chunk));
+        res.on("end", () => {
           if (!res.statusCode || res.statusCode >= 400) {
-            reject(new Error(`Token exchange failed: ${res.statusCode} ${body}`))
-            return
+            reject(
+              new Error(`Token exchange failed: ${res.statusCode} ${body}`),
+            );
+            return;
           }
           try {
-            const data = JSON.parse(body)
+            const data = JSON.parse(body);
             resolve({
               accessToken: data.access_token,
               refreshToken: data.refresh_token,
-              expiresAt: Date.now() + data.expires_in * 1000
-            })
+              expiresAt: Date.now() + data.expires_in * 1000,
+            });
           } catch (e) {
-            reject(new Error('Invalid JSON from Spotify'))
+            reject(new Error("Invalid JSON from Spotify"));
           }
-        })
-      }
-    )
+        });
+      },
+    );
 
-    req.on('error', (e: Error) => reject(e))
-    req.write(postData)
-    req.end()
-  })
+    req.on("error", (e: Error) => reject(e));
+    req.write(postData);
+    req.end();
+  });
 }
-
 
 export async function refreshSpotifyToken(
   clientId: string,
-  refreshToken: string
+  refreshToken: string,
 ): Promise<SpotifyTokens> {
   return new Promise((resolve, reject) => {
-    const { request } = require('https')
+    const { request } = require("https");
     const postData = new URLSearchParams({
       client_id: clientId,
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken
-    }).toString()
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    }).toString();
 
     const req = request(
-      'https://accounts.spotify.com/api/token',
+      "https://accounts.spotify.com/api/token",
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData)
-        }
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Length": Buffer.byteLength(postData),
+        },
       },
       (res: IncomingMessage) => {
-        let body = ''
-        res.on('data', (chunk: Buffer) => (body += chunk))
-        res.on('end', () => {
+        let body = "";
+        res.on("data", (chunk: Buffer) => (body += chunk));
+        res.on("end", () => {
           if (!res.statusCode || res.statusCode >= 400) {
-            reject(new Error(`Token refresh failed: ${res.statusCode} ${body}`))
-            return
+            reject(
+              new Error(`Token refresh failed: ${res.statusCode} ${body}`),
+            );
+            return;
           }
           try {
-            const data = JSON.parse(body)
+            const data = JSON.parse(body);
             resolve({
               accessToken: data.access_token,
               refreshToken: data.refresh_token || refreshToken,
-              expiresAt: Date.now() + data.expires_in * 1000
-            })
+              expiresAt: Date.now() + data.expires_in * 1000,
+            });
           } catch (e) {
-            reject(new Error('Invalid JSON from Spotify during refresh'))
+            reject(new Error("Invalid JSON from Spotify during refresh"));
           }
-        })
-      }
-    )
+        });
+      },
+    );
 
-    req.on('error', (e: Error) => reject(e))
-    req.write(postData)
-    req.end()
-  })
+    req.on("error", (e: Error) => reject(e));
+    req.write(postData);
+    req.end();
+  });
 }
-
 
 export function stopOAuthServer(): void {
   if (oauthServer) {
-    oauthServer.close()
-    oauthServer = null
+    oauthServer.close();
+    oauthServer = null;
   }
 }
 
@@ -268,7 +279,7 @@ function getSuccessHTML(): string {
   </div>
   <script>setTimeout(() => window.close(), 3000);</script>
 </body>
-</html>`
+</html>`;
 }
 
 function getErrorHTML(error: string): string {
@@ -300,5 +311,5 @@ function getErrorHTML(error: string): string {
     <p>Please try again from AeroLyrics.</p>
   </div>
 </body>
-</html>`
+</html>`;
 }

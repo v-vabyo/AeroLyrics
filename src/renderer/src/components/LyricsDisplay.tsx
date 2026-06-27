@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useMemo } from 'react'
-import type { LyricLine } from '../types'
+import React, { useEffect, useRef, useMemo } from "react";
+import type { LyricLine } from "../types";
 
 interface LyricsDisplayProps {
-  lyrics: LyricLine[]
-  activeIndex: number
-  isLoading: boolean
-  hasLyrics: boolean
-  error: string | null
+  lyrics: LyricLine[];
+  activeIndex: number;
+  isLoading: boolean;
+  hasLyrics: boolean;
+  error: string | null;
 }
 
 const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
@@ -14,45 +14,45 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
   activeIndex,
   isLoading,
   hasLyrics,
-  error
+  error,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map())
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   useEffect(() => {
-    if (activeIndex < 0 || !containerRef.current) return
+    if (activeIndex < 0 || !containerRef.current) return;
 
-    const activeLine = lineRefs.current.get(activeIndex)
+    const activeLine = lineRefs.current.get(activeIndex);
     if (activeLine) {
       activeLine.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      })
+        behavior: "smooth",
+        block: "center",
+      });
     }
-  }, [activeIndex])
+  }, [activeIndex]);
 
   const getLineStyle = useMemo(() => {
     return (index: number) => {
       if (activeIndex < 0) {
-        return { opacity: 0 }
+        return { opacity: 0 };
       }
 
-      const distance = Math.abs(index - activeIndex)
+      const distance = Math.abs(index - activeIndex);
 
       if (distance > 1) {
-        return { opacity: 0, pointerEvents: 'none' as const }
+        return { opacity: 0, pointerEvents: "none" as const };
       }
 
       if (distance === 0) {
-        return { opacity: 1, transform: 'scale(1.05)' }
+        return { opacity: 1, transform: "scale(1.05)" };
       }
 
       return {
         opacity: 0.3,
-        transform: 'scale(0.95)'
-      }
-    }
-  }, [activeIndex])
+        transform: "scale(0.95)",
+      };
+    };
+  }, [activeIndex]);
 
   if (isLoading) {
     return (
@@ -62,7 +62,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
           <span>Finding lyrics...</span>
         </div>
       </div>
-    )
+    );
   }
 
   if (error && !hasLyrics) {
@@ -73,7 +73,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
           <span>No lyrics available</span>
         </div>
       </div>
-    )
+    );
   }
 
   if (!hasLyrics) {
@@ -84,7 +84,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
           <span>Waiting for music...</span>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -97,14 +97,14 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
           <div
             key={`${index}-${line.time}`}
             ref={(el) => {
-              if (el) lineRefs.current.set(index, el)
+              if (el) lineRefs.current.set(index, el);
             }}
-            className={`lyric-line ${index === activeIndex ? 'active' : ''} ${
-              index < activeIndex ? 'past' : ''
+            className={`lyric-line ${index === activeIndex ? "active" : ""} ${
+              index < activeIndex ? "past" : ""
             }`}
             style={getLineStyle(index)}
           >
-            {line.text || '♪'}
+            {line.text || "♪"}
           </div>
         ))}
 
@@ -116,7 +116,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
       <div className="lyrics-fade-top" />
       <div className="lyrics-fade-bottom" />
     </div>
-  )
-}
+  );
+};
 
-export default LyricsDisplay
+export default LyricsDisplay;

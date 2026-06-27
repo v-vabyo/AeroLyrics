@@ -1,49 +1,57 @@
-import React from 'react'
+import React from "react";
 
 export default function ControlApp() {
-  const [isLocked, setIsLocked] = React.useState(false)
+  const [isLocked, setIsLocked] = React.useState(false);
 
   React.useEffect(() => {
     if (window.electronAPI && window.electronAPI.getClickThroughState) {
-      window.electronAPI.getClickThroughState().then(setIsLocked)
+      window.electronAPI.getClickThroughState().then(setIsLocked);
     }
     if (window.electronAPI && window.electronAPI.onClickThroughChanged) {
-      window.electronAPI.onClickThroughChanged(setIsLocked)
+      window.electronAPI.onClickThroughChanged(setIsLocked);
     }
-  }, [])
+  }, []);
 
   const toggleLock = () => {
-    const newState = !isLocked
-    setIsLocked(newState)
+    const newState = !isLocked;
+    setIsLocked(newState);
     if (window.electronAPI && window.electronAPI.toggleClickThrough) {
-      window.electronAPI.toggleClickThrough(newState)
+      window.electronAPI.toggleClickThrough(newState);
     }
-  }
+  };
 
   return (
-    <div 
-      style={{ 
-        width: '32px', 
-        height: '32px', 
-        WebkitAppRegion: 'no-drag',
-        background: 'transparent'
-      } as React.CSSProperties}
+    <div
+      style={
+        {
+          width: "32px",
+          height: "32px",
+          WebkitAppRegion: "no-drag",
+          background: "transparent",
+        } as React.CSSProperties
+      }
     >
-      <button 
+      <button
         key="lock-toggle-btn"
-        className="lock-toggle-btn" 
+        className="lock-toggle-btn"
         onClick={toggleLock}
-        style={{ 
-          position: 'absolute',
-          top: 0, 
-          left: 0,
-          margin: 0,
-          WebkitAppRegion: 'no-drag'
-        } as React.CSSProperties}
-        title={isLocked ? "Click to unlock and move window" : "Click to lock window (enable click-through)"}
+        style={
+          {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            margin: 0,
+            WebkitAppRegion: "no-drag",
+          } as React.CSSProperties
+        }
+        title={
+          isLocked
+            ? "Click to unlock and move window"
+            : "Click to lock window (enable click-through)"
+        }
       >
         {isLocked ? "🔒" : "🔓"}
       </button>
     </div>
-  )
+  );
 }

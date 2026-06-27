@@ -1,22 +1,22 @@
-import React from 'react'
-import type { SpotifyTrack } from '../types'
+import React from "react";
+import type { SpotifyTrack } from "../types";
 
 interface TrackInfoProps {
-  track: SpotifyTrack | null
-  currentTimeMs: number
+  track: SpotifyTrack | null;
+  currentTimeMs: number;
 }
 
 function formatTime(ms: number): string {
-  const totalSec = Math.floor(ms / 1000)
-  const min = Math.floor(totalSec / 60)
-  const sec = totalSec % 60
-  return `${min}:${sec.toString().padStart(2, '0')}`
+  const totalSec = Math.floor(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${min}:${sec.toString().padStart(2, "0")}`;
 }
 
 const TrackInfo: React.FC<TrackInfoProps> = ({ track, currentTimeMs }) => {
-  if (!track) return null
+  if (!track) return null;
 
-  const progress = Math.min((currentTimeMs / track.durationMs) * 100, 100)
+  const progress = Math.min((currentTimeMs / track.durationMs) * 100, 100);
 
   return (
     <div className="track-info">
@@ -52,7 +52,7 @@ const TrackInfo: React.FC<TrackInfoProps> = ({ track, currentTimeMs }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TrackInfo
+export default TrackInfo;

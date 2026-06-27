@@ -1,21 +1,33 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell, screen } from 'electron'
-import { join } from 'node:path'
-import { startOAuthServer, stopOAuthServer, refreshSpotifyToken } from './services/spotifyAuth'
-import { loadTokens, saveTokens, clearTokens } from './services/tokenStore'
-import { loadSettings, saveSettings } from './services/settingsStore'
-import { fetchLyricsFromMain } from './services/lrclibMain'
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  Tray,
+  Menu,
+  nativeImage,
+  shell,
+  screen,
+} from "electron";
+import { join } from "node:path";
+import {
+  startOAuthServer,
+  stopOAuthServer,
+  refreshSpotifyToken,
+} from "./services/spotifyAuth";
+import { loadTokens, saveTokens, clearTokens } from "./services/tokenStore";
+import { loadSettings, saveSettings } from "./services/settingsStore";
+import { fetchLyricsFromMain } from "./services/lrclibMain";
 
-app.setName('AeroLyrics')
-app.setPath('userData', join(app.getPath('appData'), 'AeroLyrics'))
+app.setName("AeroLyrics");
+app.setPath("userData", join(app.getPath("appData"), "AeroLyrics"));
 
-
-let mainWindow: BrowserWindow | null = null
-let tray: Tray | null = null
-let isClickThrough = false
-let currentOpacity = 0.78
+let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+let isClickThrough = false;
+let currentOpacity = 0.78;
 
 function createWindow(): void {
-  const iconPath = join(__dirname, '../../resources/icon.png')
+  const iconPath = join(__dirname, "../../resources/icon.png");
   mainWindow = new BrowserWindow({
     width: 450,
     height: 290,
@@ -23,7 +35,7 @@ function createWindow(): void {
     minHeight: 290,
     frame: false,
     transparent: true,
-    backgroundColor: '#00000000',
+    backgroundColor: "#00000000",
     alwaysOnTop: true,
     hasShadow: false,
     thickFrame: false,
@@ -34,358 +46,396 @@ function createWindow(): void {
     fullscreenable: false,
     show: true,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      webSecurity: false
-    }
-  })
+      webSecurity: false,
+    },
+  });
 
-  mainWindow.setIgnoreMouseEvents(false)
+  mainWindow.setIgnoreMouseEvents(false);
 
-  const primaryDisplay = screen.getPrimaryDisplay()
-  const { width, height } = primaryDisplay.workAreaSize
-  
-  mainWindow.on('close', () => {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+
+  mainWindow.on("close", () => {
     if (mainWindow && !mainWindow.isMinimized()) {
-      const bounds = mainWindow.getBounds()
+      const bounds = mainWindow.getBounds();
       if (bounds && bounds.x > -10000 && bounds.y > -10000) {
-        saveSettings({ windowPosition: { x: bounds.x, y: bounds.y } })
+        saveSettings({ windowPosition: { x: bounds.x, y: bounds.y } });
       }
     }
-  })
+  });
 
   const snapToEdges = () => {
-    if (!mainWindow || !mainWindow.isVisible() || mainWindow.isMinimized()) return
-    const display = screen.getPrimaryDisplay()
-    const workArea = display.workArea
-    const bounds = mainWindow.getBounds()
+    if (!mainWindow || !mainWindow.isVisible() || mainWindow.isMinimized())
+      return;
+    const display = screen.getPrimaryDisplay();
+    const workArea = display.workArea;
+    const bounds = mainWindow.getBounds();
 
-    let snapX = bounds.x
-    let snapY = bounds.y
-    let isOutOfBounds = false
+    let snapX = bounds.x;
+    let snapY = bounds.y;
+    let isOutOfBounds = false;
 
     if (snapX < workArea.x) {
-      snapX = workArea.x
-      isOutOfBounds = true
+      snapX = workArea.x;
+      isOutOfBounds = true;
     }
     if (snapY < workArea.y) {
-      snapY = workArea.y
-      isOutOfBounds = true
+      snapY = workArea.y;
+      isOutOfBounds = true;
     }
     if (snapX + bounds.width > workArea.x + workArea.width) {
-      snapX = workArea.x + workArea.width - bounds.width
-      isOutOfBounds = true
+      snapX = workArea.x + workArea.width - bounds.width;
+      isOutOfBounds = true;
     }
     if (snapY + bounds.height > workArea.y + workArea.height) {
-      snapY = workArea.y + workArea.height - bounds.height
-      isOutOfBounds = true
+      snapY = workArea.y + workArea.height - bounds.height;
+      isOutOfBounds = true;
     }
 
     if (isOutOfBounds) {
-      console.log(`[Snap] Moving from ${bounds.x},${bounds.y} to ${snapX},${snapY}`)
+      console.log(
+        `[Snap] Moving from ${bounds.x},${bounds.y} to ${snapX},${snapY}`,
+      );
       mainWindow.setBounds({
         x: Math.round(snapX),
         y: Math.round(snapY),
         width: bounds.width,
-        height: bounds.height
-      })
+        height: bounds.height,
+      });
     }
-  }
+  };
 
-  setInterval(snapToEdges, 100)
+  setInterval(snapToEdges, 100);
 
-  mainWindow.on('minimize', () => {
-  })
+  mainWindow.on("minimize", () => {});
 
-  mainWindow.setAlwaysOnTop(true, 'screen-saver')
-  
+  mainWindow.setAlwaysOnTop(true, "screen-saver");
+
   if (isClickThrough) {
-    mainWindow.setIgnoreMouseEvents(true, { forward: true })
+    mainWindow.setIgnoreMouseEvents(true, { forward: true });
   }
 
-  mainWindow.on('restore', () => {
-    mainWindow?.webContents.send('window-restored')
-  })
-  
-  const settings = loadSettings()
-  
-  if (settings.windowPosition && settings.windowPosition.x > -10000 && settings.windowPosition.y > -10000) {
-    mainWindow.setPosition(settings.windowPosition.x, settings.windowPosition.y)
+  mainWindow.on("restore", () => {
+    mainWindow?.webContents.send("window-restored");
+  });
+
+  const settings = loadSettings();
+
+  if (
+    settings.windowPosition &&
+    settings.windowPosition.x > -10000 &&
+    settings.windowPosition.y > -10000
+  ) {
+    mainWindow.setPosition(
+      settings.windowPosition.x,
+      settings.windowPosition.y,
+    );
   } else {
-    const startX = width - 450
-    const startY = height - 290
-    mainWindow.setPosition(startX, startY)
+    const startX = width - 450;
+    const startY = height - 290;
+    mainWindow.setPosition(startX, startY);
   }
 
   if (process.env.ELECTRON_RENDERER_URL) {
-    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
-  
-  mainWindow.show()
 
-  mainWindow.on('closed', () => {
-    mainWindow = null
-  })
+  mainWindow.show();
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 function createTray(): void {
-  const iconPath = join(__dirname, '../../resources/icon.png')
-  const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
+  const iconPath = join(__dirname, "../../resources/icon.png");
+  const trayIcon = nativeImage
+    .createFromPath(iconPath)
+    .resize({ width: 16, height: 16 });
 
-  tray = new Tray(trayIcon)
-  tray.setToolTip('AeroLyrics — Spotify Lyrics')
+  tray = new Tray(trayIcon);
+  tray.setToolTip("AeroLyrics — Spotify Lyrics");
 
-  updateTrayMenu()
+  updateTrayMenu();
 }
 
 function updateTrayMenu(): void {
-  if (!tray) return
+  if (!tray) return;
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'AeroLyrics',
-      enabled: false
+      label: "AeroLyrics",
+      enabled: false,
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: 'Enable Click-Through',
-      type: 'checkbox',
+      label: "Enable Click-Through",
+      type: "checkbox",
       checked: isClickThrough,
       click: (menuItem) => {
-        isClickThrough = menuItem.checked
+        isClickThrough = menuItem.checked;
         if (mainWindow) {
-          mainWindow.setIgnoreMouseEvents(isClickThrough, { forward: true })
+          mainWindow.setIgnoreMouseEvents(isClickThrough, { forward: true });
         }
-      }
+      },
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: 'Background Transparency',
+      label: "Background Transparency",
       submenu: [
         {
-          label: 'Solid (100%)',
-          type: 'radio',
+          label: "Solid (100%)",
+          type: "radio",
           checked: currentOpacity === 1,
           click: () => {
-            currentOpacity = 1
-            mainWindow?.webContents.send('opacity-change', 1)
-            updateTrayMenu()
-          }
+            currentOpacity = 1;
+            mainWindow?.webContents.send("opacity-change", 1);
+            updateTrayMenu();
+          },
         },
         {
-          label: 'Default (78%)',
-          type: 'radio',
+          label: "Default (78%)",
+          type: "radio",
           checked: currentOpacity === 0.78,
           click: () => {
-            currentOpacity = 0.78
-            mainWindow?.webContents.send('opacity-change', 0.78)
-            updateTrayMenu()
-          }
+            currentOpacity = 0.78;
+            mainWindow?.webContents.send("opacity-change", 0.78);
+            updateTrayMenu();
+          },
         },
         {
-          label: 'Medium (50%)',
-          type: 'radio',
+          label: "Medium (50%)",
+          type: "radio",
           checked: currentOpacity === 0.5,
           click: () => {
-            currentOpacity = 0.5
-            mainWindow?.webContents.send('opacity-change', 0.5)
-            updateTrayMenu()
-          }
+            currentOpacity = 0.5;
+            mainWindow?.webContents.send("opacity-change", 0.5);
+            updateTrayMenu();
+          },
         },
         {
-          label: 'Low (20%)',
-          type: 'radio',
+          label: "Low (20%)",
+          type: "radio",
           checked: currentOpacity === 0.2,
           click: () => {
-            currentOpacity = 0.2
-            mainWindow?.webContents.send('opacity-change', 0.2)
-            updateTrayMenu()
-          }
+            currentOpacity = 0.2;
+            mainWindow?.webContents.send("opacity-change", 0.2);
+            updateTrayMenu();
+          },
         },
         {
-          label: 'Transparent (0%)',
-          type: 'radio',
+          label: "Transparent (0%)",
+          type: "radio",
           checked: currentOpacity === 0,
           click: () => {
-            currentOpacity = 0
-            mainWindow?.webContents.send('opacity-change', 0)
-            updateTrayMenu()
-          }
-        }
-      ]
+            currentOpacity = 0;
+            mainWindow?.webContents.send("opacity-change", 0);
+            updateTrayMenu();
+          },
+        },
+      ],
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: isClickThrough ? '🔓 Unlock Window (Draggable)' : '🔒 Lock Window (Disable Drag)',
+      label: isClickThrough
+        ? "🔓 Unlock Window (Draggable)"
+        : "🔒 Lock Window (Disable Drag)",
       click: () => {
-        isClickThrough = !isClickThrough
-        saveSettings({ isLocked: isClickThrough })
-        
+        isClickThrough = !isClickThrough;
+        saveSettings({ isLocked: isClickThrough });
+
         if (mainWindow) {
-          mainWindow.setIgnoreMouseEvents(false)
-          mainWindow.webContents.send('click-through-changed', isClickThrough)
+          mainWindow.setIgnoreMouseEvents(false);
+          mainWindow.webContents.send("click-through-changed", isClickThrough);
         }
-        updateTrayMenu()
-      }
+        updateTrayMenu();
+      },
     },
     {
-      label: '📌 Always on Top',
-      type: 'checkbox',
+      label: "📌 Always on Top",
+      type: "checkbox",
       checked: true,
       click: (menuItem) => {
-        mainWindow?.setAlwaysOnTop(menuItem.checked)
-      }
+        mainWindow?.setAlwaysOnTop(menuItem.checked);
+      },
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: '🔄 Reconnect Spotify',
+      label: "🔄 Reconnect Spotify",
       click: () => {
-        startSpotifyOAuth()
-      }
+        startSpotifyOAuth();
+      },
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: '❌ Quit AeroLyrics',
+      label: "❌ Quit AeroLyrics",
       click: () => {
-        app.quit()
-      }
-    }
-  ])
+        app.quit();
+      },
+    },
+  ]);
 
-  tray.setContextMenu(contextMenu)
+  tray.setContextMenu(contextMenu);
 }
 
-async function startSpotifyOAuth(): Promise<{ success: boolean; error?: string }> {
+async function startSpotifyOAuth(): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   try {
-    const clientId = (import.meta as any).env.MAIN_VITE_SPOTIFY_CLIENT_ID || ''
+    const clientId = (import.meta as any).env.MAIN_VITE_SPOTIFY_CLIENT_ID || "";
 
     if (!clientId) {
-      console.error('MAIN_VITE_SPOTIFY_CLIENT_ID not set in .env!')
-      return { success: false, error: 'Spotify Client ID not configured. Set MAIN_VITE_SPOTIFY_CLIENT_ID in .env file.' }
+      console.error("MAIN_VITE_SPOTIFY_CLIENT_ID not set in .env!");
+      return {
+        success: false,
+        error:
+          "Spotify Client ID not configured. Set MAIN_VITE_SPOTIFY_CLIENT_ID in .env file.",
+      };
     }
 
-    const tokens = await startOAuthServer(clientId)
+    const tokens = await startOAuthServer(clientId);
     if (tokens) {
-      saveTokens(tokens)
-      mainWindow?.webContents.send('tokens-updated', tokens)
-      
-      isClickThrough = false
-      mainWindow?.setIgnoreMouseEvents(false)
-      mainWindow?.webContents.send('click-through-changed', false)
-      updateTrayMenu()
+      saveTokens(tokens);
+      mainWindow?.webContents.send("tokens-updated", tokens);
 
-      return { success: true }
+      isClickThrough = false;
+      mainWindow?.setIgnoreMouseEvents(false);
+      mainWindow?.webContents.send("click-through-changed", false);
+      updateTrayMenu();
+
+      return { success: true };
     }
-    return { success: false, error: 'Authorization was cancelled or timed out.' }
+    return {
+      success: false,
+      error: "Authorization was cancelled or timed out.",
+    };
   } catch (error) {
-    console.error('OAuth flow failed:', error)
-    return { success: false, error: 'OAuth flow failed. Please try again.' }
+    console.error("OAuth flow failed:", error);
+    return { success: false, error: "OAuth flow failed. Please try again." };
   }
 }
-
 
 function setupIPC(): void {
+  ipcMain.handle("get-click-through-state", () => {
+    return isClickThrough;
+  });
 
-  ipcMain.handle('get-click-through-state', () => {
-    return isClickThrough
-  })
+  ipcMain.on(
+    "set-ignore-mouse-events",
+    (event, ignore: boolean, options?: { forward: boolean }) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      win?.setIgnoreMouseEvents(ignore, options);
+    },
+  );
 
-  ipcMain.on('set-ignore-mouse-events', (event, ignore: boolean, options?: { forward: boolean }) => {
-    const win = BrowserWindow.fromWebContents(event.sender)
-    win?.setIgnoreMouseEvents(ignore, options)
-  })
+  ipcMain.on("opacity-initialized", (_event, opacity: number) => {
+    currentOpacity = opacity;
+    updateTrayMenu();
+  });
 
-  ipcMain.on('opacity-initialized', (_event, opacity: number) => {
-    currentOpacity = opacity
-    updateTrayMenu()
-  })
+  ipcMain.on("toggle-click-through", (_event, enable: boolean) => {
+    isClickThrough = enable;
+    saveSettings({ isLocked: isClickThrough });
 
-  ipcMain.on('toggle-click-through', (_event, enable: boolean) => {
-    isClickThrough = enable
-    saveSettings({ isLocked: isClickThrough })
-    
     if (mainWindow) {
-      mainWindow.setIgnoreMouseEvents(false)
-      mainWindow.webContents.send('click-through-changed', isClickThrough)
+      mainWindow.setIgnoreMouseEvents(false);
+      mainWindow.webContents.send("click-through-changed", isClickThrough);
     }
-    updateTrayMenu()
-  })
+    updateTrayMenu();
+  });
 
-  ipcMain.on('close-window', () => {
-    app.quit()
-  })
+  ipcMain.on("close-window", () => {
+    app.quit();
+  });
 
-  ipcMain.handle('get-spotify-tokens', async () => {
-    return loadTokens()
-  })
+  ipcMain.handle("get-spotify-tokens", async () => {
+    return loadTokens();
+  });
 
-  ipcMain.handle('start-spotify-auth', async () => {
-    return await startSpotifyOAuth()
-  })
+  ipcMain.handle("start-spotify-auth", async () => {
+    return await startSpotifyOAuth();
+  });
 
-  ipcMain.on('set-window-position', (_event, x: number, y: number) => {
-    mainWindow?.setPosition(Math.round(x), Math.round(y))
-  })
+  ipcMain.on("set-window-position", (_event, x: number, y: number) => {
+    mainWindow?.setPosition(Math.round(x), Math.round(y));
+  });
 
-  ipcMain.handle('refresh-token', async (_, __, refreshToken) => {
+  ipcMain.handle("refresh-token", async (_, __, refreshToken) => {
     try {
-      const clientId = (import.meta as any).env.MAIN_VITE_SPOTIFY_CLIENT_ID || ''
-      if (!clientId) throw new Error('Client ID missing')
-      const tokens = await refreshSpotifyToken(clientId, refreshToken)
+      const clientId =
+        (import.meta as any).env.MAIN_VITE_SPOTIFY_CLIENT_ID || "";
+      if (!clientId) throw new Error("Client ID missing");
+      const tokens = await refreshSpotifyToken(clientId, refreshToken);
       if (tokens) {
-        saveTokens(tokens)
+        saveTokens(tokens);
       }
-      return tokens
+      return tokens;
     } catch (error) {
-      console.error('[Main] Refresh token failed:', error)
-      return null
+      console.error("[Main] Refresh token failed:", error);
+      return null;
     }
-  })
+  });
 
-  ipcMain.on('logout', () => {
-    clearTokens()
-  })
+  ipcMain.on("logout", () => {
+    clearTokens();
+  });
 
-  ipcMain.on('set-click-through', (_, ignore) => {
-    isClickThrough = ignore
+  ipcMain.on("set-click-through", (_, ignore) => {
+    isClickThrough = ignore;
     if (mainWindow) {
-      mainWindow.setIgnoreMouseEvents(ignore, { forward: true })
+      mainWindow.setIgnoreMouseEvents(ignore, { forward: true });
     }
-    updateTrayMenu()
-  })
+    updateTrayMenu();
+  });
 
-  ipcMain.handle('fetch-lyrics', async (_event, trackName: string, artistName: string, albumName: string, durationSeconds: number) => {
-    return await fetchLyricsFromMain(trackName, artistName, albumName, durationSeconds)
-  })
+  ipcMain.handle(
+    "fetch-lyrics",
+    async (
+      _event,
+      trackName: string,
+      artistName: string,
+      albumName: string,
+      durationSeconds: number,
+    ) => {
+      return await fetchLyricsFromMain(
+        trackName,
+        artistName,
+        albumName,
+        durationSeconds,
+      );
+    },
+  );
 }
 
-
 app.whenReady().then(() => {
-  const settings = loadSettings()
-  isClickThrough = settings.isLocked
+  const settings = loadSettings();
+  isClickThrough = settings.isLocked;
 
-  setupIPC()
-  createWindow()
-  createTray()
-})
+  setupIPC();
+  createWindow();
+  createTray();
+});
 
-app.on('window-all-closed', () => {
-  stopOAuthServer()
-  if (process.platform !== 'darwin') {
-    app.quit()
+app.on("window-all-closed", () => {
+  stopOAuthServer();
+  if (process.platform !== "darwin") {
+    app.quit();
   }
-})
+});
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow()
+    createWindow();
   }
-})
+});
 
-app.on('before-quit', () => {
-  stopOAuthServer()
-})
+app.on("before-quit", () => {
+  stopOAuthServer();
+});

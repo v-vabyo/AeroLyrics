@@ -1,11 +1,15 @@
-import type { LRCLibResponse } from '../types'
-
+import type { LRCLibResponse } from "../types";
 
 export async function fetchLyrics(
   trackName: string,
   artistName: string,
   albumName: string,
-  durationSeconds: number
+  durationSeconds: number,
 ): Promise<LRCLibResponse | null> {
-  return await window.electronAPI.fetchLyrics(trackName, artistName, albumName, durationSeconds)
+  return await window.electronAPI.fetchLyrics(
+    trackName,
+    artistName,
+    albumName,
+    durationSeconds,
+  );
 }
