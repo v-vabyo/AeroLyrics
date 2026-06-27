@@ -289,14 +289,14 @@ async function startSpotifyOAuth(): Promise<{
   error?: string;
 }> {
   try {
-    const clientId = (import.meta as any).env.MAIN_VITE_SPOTIFY_CLIENT_ID || "";
+    const clientId = (import.meta as any).env.VITE_SPOTIFY_CLIENT_ID || "";
 
     if (!clientId) {
-      console.error("MAIN_VITE_SPOTIFY_CLIENT_ID not set in .env!");
+      console.error("VITE_SPOTIFY_CLIENT_ID not set in .env!");
       return {
         success: false,
         error:
-          "Spotify Client ID not configured. Set MAIN_VITE_SPOTIFY_CLIENT_ID in .env file.",
+          "Spotify Client ID not configured. Set VITE_SPOTIFY_CLIENT_ID in .env file.",
       };
     }
 
@@ -370,7 +370,7 @@ function setupIPC(): void {
   ipcMain.handle("refresh-token", async (_, __, refreshToken) => {
     try {
       const clientId =
-        (import.meta as any).env.MAIN_VITE_SPOTIFY_CLIENT_ID || "";
+        (import.meta as any).env.VITE_SPOTIFY_CLIENT_ID || "";
       if (!clientId) throw new Error("Client ID missing");
       const tokens = await refreshSpotifyToken(clientId, refreshToken);
       if (tokens) {
