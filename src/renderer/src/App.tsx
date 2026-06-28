@@ -47,6 +47,22 @@ const App: React.FC = () => {
   );
 
   React.useEffect(() => {
+    if (window.electronAPI && window.electronAPI.onShortcutOffsetChange) {
+      return window.electronAPI.onShortcutOffsetChange((delta) => {
+        setSyncOffsetMs((prev) => {
+          const newOffset = prev + delta;
+          if (track && window.electronAPI.saveLyricsOffset) {
+            window.electronAPI.saveLyricsOffset(track.name, track.artist, newOffset).catch(err => {
+              console.error("Failed to save offset from shortcut:", err);
+            });
+          }
+          return newOffset;
+        });
+      });
+    }
+  }, [track]);
+
+  React.useEffect(() => {
     localStorage.setItem("bgOpacity", bgOpacity.toString());
     if (window.electronAPI && window.electronAPI.sendOpacityToMain) {
       window.electronAPI.sendOpacityToMain(bgOpacity);

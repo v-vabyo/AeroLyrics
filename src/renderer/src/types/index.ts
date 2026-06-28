@@ -60,6 +60,7 @@ export interface ElectronAPI {
   ) => Promise<SpotifyTokens | null>;
   clearTokens: () => void;
   saveLyricsOffset: (trackName: string, artistName: string, offset: number) => Promise<void>;
+  onShortcutOffsetChange: (callback: (delta: number) => void) => () => void;
 }
 
 declare global {

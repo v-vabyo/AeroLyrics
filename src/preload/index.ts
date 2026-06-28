@@ -87,4 +87,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   clearTokens: () => ipcRenderer.send("logout"),
   saveLyricsOffset: (trackName: string, artistName: string, offset: number) =>
     ipcRenderer.invoke("save-lyrics-offset", trackName, artistName, offset),
+  onShortcutOffsetChange: (callback: (delta: number) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, delta: number) =>
+      callback(delta);
+    ipcRenderer.on("shortcut-offset-change", listener);
+    return () => {
+      ipcRenderer.removeListener("shortcut-offset-change", listener);
+    };
+  },
 });

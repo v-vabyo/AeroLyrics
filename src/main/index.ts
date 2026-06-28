@@ -7,6 +7,7 @@ import {
   nativeImage,
   shell,
   screen,
+  globalShortcut,
 } from "electron";
 import { join } from "node:path";
 import {
@@ -433,6 +434,18 @@ app.whenReady().then(() => {
   setupIPC();
   createWindow();
   createTray();
+
+  globalShortcut.register("CommandOrControl+Alt+Left", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("shortcut-offset-change", -500);
+    }
+  });
+
+  globalShortcut.register("CommandOrControl+Alt+Right", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("shortcut-offset-change", 500);
+    }
+  });
 });
 
 app.on("window-all-closed", () => {
@@ -450,4 +463,8 @@ app.on("activate", () => {
 
 app.on("before-quit", () => {
   stopOAuthServer();
+});
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
 });
