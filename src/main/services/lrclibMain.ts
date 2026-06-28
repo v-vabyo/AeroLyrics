@@ -40,17 +40,27 @@ function getCachePath(trackName: string, artistName: string): string {
 async function loadFromCache(
   trackName: string,
   artistName: string,
+  expectedDuration: number,
 ): Promise<LRCLibResponse | null> {
   const cacheKey = `${trackName}|${artistName}`;
-  if (memoryCache[cacheKey]) return memoryCache[cacheKey];
+  const cached = memoryCache[cacheKey];
+  
+  if (cached) {
+    if (Math.abs(cached.duration - expectedDuration) === 0) return cached;
+    delete memoryCache[cacheKey]; // Invalid duration, clear memory cache
+  }
 
   try {
     await ensureCacheDir();
     const filePath = getCachePath(trackName, artistName);
     const data = await fs.readFile(filePath, "utf-8");
     const result = JSON.parse(data) as LRCLibResponse;
-    memoryCache[cacheKey] = result;
-    return result;
+    if (Math.abs(result.duration - expectedDuration) === 0) {
+      memoryCache[cacheKey] = result;
+      return result;
+    } else {
+      return null;
+    }
   } catch (e) {
     return null;
   }
@@ -78,7 +88,11 @@ export async function saveLyricsOffsetToCache(
   artistName: string,
   offset: number
 ) {
-  const cached = await loadFromCache(trackName, artistName);
+  // We don't have expectedDuration here, so we load blindly from file
+  try {
+    const filePath = getCachePath(trackName, artistName);
+    const data = await fs.readFile(filePath, "utf-8");
+    const cached = JSON.parse(data) as LRCLibResponse;
   if (cached) {
     cached.offset = offset;
     await saveToCache(trackName, artistName, cached);
@@ -136,7 +150,9 @@ export async function fetchLyricsFromMain(
 ): Promise<LRCLibResponse | null> {
   const startTime = Date.now();
 
-  const cached = await loadFromCache(trackName, artistName);
+  const expectedDuration = Math.round(durationSeconds);
+
+  const cached = await loadFromCache(trackName, artistName, expectedDuration);
   if (cached) {
     console.log(
       `[LRCLIB-Main] ✓ Loaded lyrics from LOCAL CACHE for "${trackName}" (0ms)`,
@@ -188,7 +204,7 @@ export async function fetchLyricsFromMain(
     if (
       getResult &&
       getResult.syncedLyrics &&
-      Math.abs(getResult.duration - durationSeconds) === 0
+      Math.abs(getResult.duration - expectedDuration) === 0
     ) {
       console.log(
         `[LRCLIB-Main] ✓ Got synced lyrics via /get in ${Date.now() - startTime}ms`,
@@ -201,7 +217,7 @@ export async function fetchLyricsFromMain(
     if (
       searchResult &&
       searchResult.syncedLyrics &&
-      Math.abs(searchResult.duration - durationSeconds) === 0
+      Math.abs(searchResult.duration - expectedDuration) === 0
     ) {
       console.log(
         `[LRCLIB-Main] ✓ Got synced lyrics via /search in ${Date.now() - startTime}ms`,
@@ -210,16 +226,20 @@ export async function fetchLyricsFromMain(
       return searchResult;
     }
 
+    // If we reach here, neither get nor search had valid SYNCED lyrics matching the duration exactly.
+    // We can fallback to plain lyrics, but we MUST strip syncedLyrics so we don't accidentally display poorly-synced lyrics!
     if (getResult && getResult.plainLyrics) {
+      getResult.syncedLyrics = null;
       console.log(
-        `[LRCLIB-Main] ✓ Got plain lyrics via /get in ${Date.now() - startTime}ms`,
+        `[LRCLIB-Main] ✓ Got plain lyrics via /get (Synced lyrics discarded due to strict duration mismatch) in ${Date.now() - startTime}ms`,
       );
       await saveToCache(trackName, artistName, getResult);
       return getResult;
     }
     if (searchResult && searchResult.plainLyrics) {
+      searchResult.syncedLyrics = null;
       console.log(
-        `[LRCLIB-Main] ✓ Got plain lyrics via /search in ${Date.now() - startTime}ms`,
+        `[LRCLIB-Main] ✓ Got plain lyrics via /search (Synced lyrics discarded due to strict duration mismatch) in ${Date.now() - startTime}ms`,
       );
       await saveToCache(trackName, artistName, searchResult);
       return searchResult;
