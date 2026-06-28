@@ -93,9 +93,12 @@ export async function saveLyricsOffsetToCache(
     const filePath = getCachePath(trackName, artistName);
     const data = await fs.readFile(filePath, "utf-8");
     const cached = JSON.parse(data) as LRCLibResponse;
-  if (cached) {
-    cached.offset = offset;
-    await saveToCache(trackName, artistName, cached);
+    if (cached) {
+      cached.offset = offset;
+      await saveToCache(trackName, artistName, cached);
+    }
+  } catch (e) {
+    // Ignore error if cache doesn't exist
   }
 }
 
