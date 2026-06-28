@@ -63,6 +63,9 @@ export interface ElectronAPI {
   onShortcutOffsetChange: (callback: (delta: number) => void) => () => void;
   searchLyrics: (trackName: string, artistName: string) => Promise<LRCLibResponse[]>;
   saveLyricOverride: (trackName: string, artistName: string, lyricData: LRCLibResponse) => Promise<boolean>;
+  openLyricsPicker: (trackName: string, artistName: string, durationMs: number) => void;
+  onForceLyricRefetch: (callback: () => void) => () => void;
+  notifyLyricSelected: () => void;
 }
 
 declare global {

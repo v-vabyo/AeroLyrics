@@ -33,10 +33,15 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+import { LyricsPickerApp } from "./LyricsPickerApp";
+
+const urlParams = new URLSearchParams(window.location.search);
+const isPickerWindow = urlParams.get("window") === "picker";
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      {isPickerWindow ? <LyricsPickerApp /> : <App />}
     </ErrorBoundary>
   </React.StrictMode>,
 );

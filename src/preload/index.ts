@@ -99,4 +99,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("search-lyrics", trackName, artistName),
   saveLyricOverride: (trackName: string, artistName: string, lyricData: any) =>
     ipcRenderer.invoke("save-lyric-override", trackName, artistName, lyricData),
+  openLyricsPicker: (trackName: string, artistName: string, durationMs: number) =>
+    ipcRenderer.send("open-lyrics-picker", trackName, artistName, durationMs),
+  onForceLyricRefetch: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("force-lyric-refetch", listener);
+    return () => ipcRenderer.removeListener("force-lyric-refetch", listener);
+  },
+  notifyLyricSelected: () => ipcRenderer.send("lyric-selected"),
 });

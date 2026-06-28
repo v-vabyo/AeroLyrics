@@ -4,7 +4,6 @@ import { useLyricSync } from "./hooks/useLyricSync";
 import LyricsDisplay from "./components/LyricsDisplay";
 import TrackInfo from "./components/TrackInfo";
 import AuthScreen from "./components/AuthScreen";
-import { LyricsPickerModal } from "./components/LyricsPickerModal";
 
 const App: React.FC = () => {
   const {
@@ -21,7 +20,6 @@ const App: React.FC = () => {
     return Number(localStorage.getItem("bgOpacity") ?? 0.78);
   });
   const [syncOffsetMs, setSyncOffsetMs] = React.useState(0);
-  const [isPickerOpen, setIsPickerOpen] = React.useState(false);
   const [lyricRefetchTrigger, setLyricRefetchTrigger] = React.useState(0);
 
   const {
@@ -71,6 +69,14 @@ const App: React.FC = () => {
       window.electronAPI.sendOpacityToMain(bgOpacity);
     }
   }, [bgOpacity]);
+
+  React.useEffect(() => {
+    if (window.electronAPI && window.electronAPI.onForceLyricRefetch) {
+      return window.electronAPI.onForceLyricRefetch(() => {
+        setLyricRefetchTrigger((prev) => prev + 1);
+      });
+    }
+  }, []);
 
   React.useEffect(() => {
     if (window.electronAPI && window.electronAPI.onOpacityChange) {
@@ -213,17 +219,9 @@ const App: React.FC = () => {
             currentTimeMs={currentTimeMs} 
             syncOffsetMs={syncOffsetMs}
             onOffsetChange={handleOffsetChange}
-            onOpenPicker={() => setIsPickerOpen(true)}
           />
         </>
       )}
-
-      <LyricsPickerModal
-        track={track}
-        isOpen={isPickerOpen}
-        onClose={() => setIsPickerOpen(false)}
-        onLyricSelected={() => setLyricRefetchTrigger(prev => prev + 1)}
-      />
     </div>
   );
 };

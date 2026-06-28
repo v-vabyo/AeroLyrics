@@ -28,6 +28,39 @@ app.setName("AeroLyrics");
 app.setPath("userData", join(app.getPath("appData"), "AeroLyrics"));
 
 let mainWindow: BrowserWindow | null = null;
+let lyricsPickerWindow: BrowserWindow | null = null;
+
+function openLyricsPickerWindow(trackName: string, artistName: string, durationMs: number): void {
+  if (lyricsPickerWindow) {
+    lyricsPickerWindow.focus();
+    return;
+  }
+  lyricsPickerWindow = new BrowserWindow({
+    width: 600,
+    height: 500,
+    title: "Select Lyrics",
+    autoHideMenuBar: true,
+    backgroundColor: "#18181b",
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  lyricsPickerWindow.on("closed", () => {
+    lyricsPickerWindow = null;
+  });
+
+  const query = `window=picker&trackName=${encodeURIComponent(trackName)}&artistName=${encodeURIComponent(artistName)}&durationMs=${durationMs}`;
+  if (!app.isPackaged && process.env["ELECTRON_RENDERER_URL"]) {
+    lyricsPickerWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}?${query}`);
+  } else {
+    lyricsPickerWindow.loadFile(join(__dirname, "../renderer/index.html"), {
+      search: query,
+    });
+  }
+}
 let tray: Tray | null = null;
 let isClickThrough = false;
 let currentOpacity = 0.78;
@@ -434,6 +467,19 @@ function setupIPC(): void {
     } catch (error) {
       console.error("[Main] Save lyric override failed:", error);
       return false;
+    }
+  });
+
+  ipcMain.on("open-lyrics-picker", (_, trackName, artistName, durationMs) => {
+    openLyricsPickerWindow(trackName, artistName, durationMs);
+  });
+
+  ipcMain.on("lyric-selected", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("force-lyric-refetch");
+    }
+    if (lyricsPickerWindow) {
+      lyricsPickerWindow.close();
     }
   });
 

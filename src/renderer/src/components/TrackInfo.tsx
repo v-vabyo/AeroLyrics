@@ -6,7 +6,6 @@ interface TrackInfoProps {
   currentTimeMs: number;
   syncOffsetMs: number;
   onOffsetChange: (newOffset: number) => void;
-  onOpenPicker?: () => void;
 }
 
 function formatTime(ms: number): string {
@@ -16,10 +15,16 @@ function formatTime(ms: number): string {
   return `${min}:${sec.toString().padStart(2, "0")}`;
 }
 
-const TrackInfo: React.FC<TrackInfoProps> = ({ track, currentTimeMs, syncOffsetMs, onOffsetChange, onOpenPicker }) => {
+const TrackInfo: React.FC<TrackInfoProps> = ({ track, currentTimeMs, syncOffsetMs, onOffsetChange }) => {
   if (!track) return null;
 
   const progress = Math.min((currentTimeMs / track.durationMs) * 100, 100);
+
+  const handleOpenPicker = () => {
+    if (window.electronAPI && window.electronAPI.openLyricsPicker) {
+      window.electronAPI.openLyricsPicker(track.name, track.artist, track.durationMs);
+    }
+  };
 
   return (
     <div className="track-info">
@@ -58,7 +63,7 @@ const TrackInfo: React.FC<TrackInfoProps> = ({ track, currentTimeMs, syncOffsetM
           
           <button 
             className="sync-btn search-btn" 
-            onClick={onOpenPicker} 
+            onClick={handleOpenPicker} 
             title="Search & Pick Lyrics"
             style={{ marginLeft: "4px" }}
           >
