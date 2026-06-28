@@ -6,6 +6,7 @@ export function LyricsPickerApp() {
   const [results, setResults] = useState<LRCLibResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   // Parse URL search params
   const urlParams = new URLSearchParams(window.location.search);
@@ -96,31 +97,35 @@ export function LyricsPickerApp() {
             No alternative lyrics found.
           </div>
         ) : (
-          results.map((r, i) => (
+          results.map((r, i) => {
+            const isPreviewing = previewIndex === i;
+            return (
             <div
               key={`${r.id}-${i}`}
-              onClick={() => handleSelect(r)}
+              onClick={() => {
+                if (!saving && !isPreviewing) setPreviewIndex(i);
+              }}
               style={{
                 padding: "12px",
-                backgroundColor: "rgba(255,255,255,0.03)",
+                backgroundColor: isPreviewing ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
                 borderRadius: "8px",
-                cursor: saving ? "wait" : "pointer",
+                cursor: saving ? "wait" : (isPreviewing ? "default" : "pointer"),
                 display: "flex",
                 flexDirection: "column",
                 gap: "4px",
-                border: "1px solid transparent",
+                border: isPreviewing ? "1px solid rgba(255,255,255,0.1)" : "1px solid transparent",
                 transition: "all 0.2s",
               }}
               onMouseEnter={(e) => {
-                if (!saving)
+                if (!saving && !isPreviewing)
                   e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)";
               }}
               onMouseLeave={(e) => {
-                if (!saving)
+                if (!saving && !isPreviewing)
                   e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)";
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <strong style={{ fontSize: "14px" }}>
                   {r.trackName} - {r.artistName}
                 </strong>
@@ -150,7 +155,7 @@ export function LyricsPickerApp() {
                       style={{
                         marginLeft: "4px",
                         color:
-                          Math.abs(r.duration - Math.round(durationMs / 1000)) === 0
+                          Math.abs(r.duration - Math.round(durationMs / 1000)) <= 2
                             ? "#10b981"
                             : "#ef4444",
                       }}
@@ -160,8 +165,43 @@ export function LyricsPickerApp() {
                   )}
                 </span>
               </div>
+              
+              {isPreviewing && (
+                <div style={{ marginTop: "12px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "12px" }}>
+                  <div style={{ 
+                    maxHeight: "150px", 
+                    overflowY: "auto", 
+                    fontSize: "13px", 
+                    color: "#d4d4d8",
+                    lineHeight: "1.6",
+                    marginBottom: "12px",
+                    padding: "8px",
+                    backgroundColor: "rgba(0,0,0,0.2)",
+                    borderRadius: "4px",
+                    whiteSpace: "pre-wrap"
+                  }}>
+                    {r.syncedLyrics || r.plainLyrics || "No lyrics content available."}
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setPreviewIndex(null); }}
+                      style={{ padding: "6px 12px", backgroundColor: "transparent", color: "white", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "4px", cursor: "pointer", fontSize: "13px" }}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleSelect(r); }}
+                      style={{ padding: "6px 12px", backgroundColor: "#10b981", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Use this Lyric"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
