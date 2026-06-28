@@ -216,7 +216,7 @@ export async function fetchLyricsFromMain(
     if (
       getResult &&
       getResult.syncedLyrics &&
-      Math.abs(getResult.duration - expectedDuration) === 0
+      Math.abs(getResult.duration - expectedDuration) <= 2
     ) {
       console.log(
         `[LRCLIB-Main] ✓ Got synced lyrics via /get in ${Date.now() - startTime}ms`,
@@ -229,7 +229,7 @@ export async function fetchLyricsFromMain(
     if (
       searchResult &&
       searchResult.syncedLyrics &&
-      Math.abs(searchResult.duration - expectedDuration) === 0
+      Math.abs(searchResult.duration - expectedDuration) <= 2
     ) {
       console.log(
         `[LRCLIB-Main] ✓ Got synced lyrics via /search in ${Date.now() - startTime}ms`,
@@ -299,7 +299,7 @@ async function fetchSearch(
     console.log(`[LRCLIB-Search] Found ${results.length} results`);
 
     const validResults = results
-      .filter((r) => Math.abs(r.duration - expectedDuration) === 0)
+      .filter((r) => Math.abs(r.duration - expectedDuration) <= 2)
       .sort(
         (a, b) =>
           Math.abs(a.duration - expectedDuration) -
