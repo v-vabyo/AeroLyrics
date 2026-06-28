@@ -8,7 +8,11 @@ AeroLyrics is a frameless, floating Spotify lyrics widget built for Windows. It 
 
 ## ✨ Features
 
-- **Real-Time Sync**: Fetches and synchronizes lyrics with the currently playing Spotify track via the LRCLIB API with **Zero-Tolerance** duration matching to ensure 100% accurate lyrics.
+- **Real-Time Sync**: Fetches and synchronizes lyrics with the currently playing Spotify track via the LRCLIB API.
+- **Intelligent Default Selection**: Automatically prioritizes synchronized lyrics with relaxed duration matching (up to 2s tolerance) to prevent unnecessary fallbacks to plain text.
+- **Interactive Lyrics Picker**: A dedicated search window to manually find and select alternative lyric versions when needed.
+- **Smart Result Sorting**: Search results are intelligently sorted, bringing synchronized lyrics with the closest duration matches to the top.
+- **Live UI Preview**: Click any lyric in the picker to instantly preview it on the main widget in real-time before permanently applying it.
 - **Manual Sync Adjustment**: Built-in visual controls to advance or delay lyric timing with millisecond precision, dynamically cached for future playback.
 - **Global Keyboard Shortcuts**: Control lyric sync globally (`Ctrl + Alt + Left/Right`) even when the widget is in Click-Through mode and running in the background.
 - **Aggressive Always-On-Top**: Uses Windows `screen-saver` level priority to ensure the widget stays on top of borderless full-screen applications and games.
