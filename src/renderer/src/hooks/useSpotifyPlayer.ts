@@ -55,6 +55,12 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
     };
   }, []);
 
+  useEffect(() => {
+    if (tokens) {
+      isRefreshingRef.current = false;
+    }
+  }, [tokens]);
+
   const pollCurrentlyPlaying = useCallback(async () => {
     if (!tokens) return;
 
@@ -69,14 +75,17 @@ export function useSpotifyPlayer(): UseSpotifyPlayerReturn {
         );
         if (refreshed) {
           setTokens(refreshed);
+          // isRefreshingRef will be reset by the useEffect when tokens change
           return;
         } else {
           setError("Session expired. Please reconnect.");
           setTokens(null);
           window.electronAPI.clearTokens();
+          isRefreshingRef.current = false;
           return;
         }
-      } finally {
+      } catch (err) {
+        console.error("Refresh token error:", err);
         isRefreshingRef.current = false;
       }
     }
