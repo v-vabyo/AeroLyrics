@@ -17,7 +17,12 @@ import {
 } from "./services/spotifyAuth";
 import { loadTokens, saveTokens, clearTokens } from "./services/tokenStore";
 import { loadSettings, saveSettings } from "./services/settingsStore";
-import { fetchLyricsFromMain, saveLyricsOffsetToCache } from "./services/lrclibMain";
+import {
+  fetchLyricsFromMain,
+  saveLyricsOffsetToCache,
+  searchAllLyrics,
+  saveLyricOverride,
+} from "./services/lrclibMain";
 
 app.setName("AeroLyrics");
 app.setPath("userData", join(app.getPath("appData"), "AeroLyrics"));
@@ -398,21 +403,39 @@ function setupIPC(): void {
 
   ipcMain.handle(
     "fetch-lyrics",
-    async (
-      _event,
-      trackName: string,
-      artistName: string,
-      albumName: string,
-      durationSeconds: number,
-    ) => {
-      return await fetchLyricsFromMain(
-        trackName,
-        artistName,
-        albumName,
-        durationSeconds,
-      );
+    async (_, trackName, artistName, albumName, durationMs) => {
+      try {
+        return await fetchLyricsFromMain(
+          trackName,
+          artistName,
+          albumName,
+          durationMs / 1000,
+        );
+      } catch (error) {
+        console.error("[Main] Fetch lyrics failed:", error);
+        return null;
+      }
     },
   );
+
+  ipcMain.handle("search-lyrics", async (_, trackName, artistName) => {
+    try {
+      return await searchAllLyrics(trackName, artistName);
+    } catch (error) {
+      console.error("[Main] Search lyrics failed:", error);
+      return [];
+    }
+  });
+
+  ipcMain.handle("save-lyric-override", async (_, trackName, artistName, lyricData) => {
+    try {
+      await saveLyricOverride(trackName, artistName, lyricData);
+      return true;
+    } catch (error) {
+      console.error("[Main] Save lyric override failed:", error);
+      return false;
+    }
+  });
 
   ipcMain.handle(
     "save-lyrics-offset",

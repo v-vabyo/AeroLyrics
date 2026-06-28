@@ -95,4 +95,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.removeListener("shortcut-offset-change", listener);
     };
   },
+  searchLyrics: (trackName: string, artistName: string) =>
+    ipcRenderer.invoke("search-lyrics", trackName, artistName),
+  saveLyricOverride: (trackName: string, artistName: string, lyricData: any) =>
+    ipcRenderer.invoke("save-lyric-override", trackName, artistName, lyricData),
 });

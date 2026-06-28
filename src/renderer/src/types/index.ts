@@ -61,6 +61,8 @@ export interface ElectronAPI {
   clearTokens: () => void;
   saveLyricsOffset: (trackName: string, artistName: string, offset: number) => Promise<void>;
   onShortcutOffsetChange: (callback: (delta: number) => void) => () => void;
+  searchLyrics: (trackName: string, artistName: string) => Promise<LRCLibResponse[]>;
+  saveLyricOverride: (trackName: string, artistName: string, lyricData: LRCLibResponse) => Promise<boolean>;
 }
 
 declare global {

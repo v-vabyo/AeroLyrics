@@ -22,6 +22,7 @@ interface UseLyricSyncReturn {
 export function useLyricSync(
   track: SpotifyTrack | null,
   currentTimeMs: number,
+  refetchTrigger: number = 0,
 ): UseLyricSyncReturn {
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [initialOffset, setInitialOffset] = useState(0);
@@ -30,10 +31,21 @@ export function useLyricSync(
   const lastTrackIdRef = useRef<string>("");
   const abortRef = useRef<AbortController | null>(null);
 
+  const lastRefetchRef = useRef<number>(0);
+
   useEffect(() => {
-    if (!track || track.id === lastTrackIdRef.current) return;
+    const isNewTrack = track?.id !== lastTrackIdRef.current;
+    const isForcedRefetch = refetchTrigger !== lastRefetchRef.current;
+
+    if (!track) return;
+    if (!isNewTrack && !isForcedRefetch) return;
+
+    if (isForcedRefetch && track.id) {
+      lyricsCache.delete(track.id);
+    }
 
     lastTrackIdRef.current = track.id;
+    lastRefetchRef.current = refetchTrigger;
 
     if (abortRef.current) {
       abortRef.current.abort();

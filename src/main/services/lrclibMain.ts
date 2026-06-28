@@ -102,6 +102,15 @@ export async function saveLyricsOffsetToCache(
   }
 }
 
+export async function saveLyricOverride(
+  trackName: string,
+  artistName: string,
+  lyricData: LRCLibResponse
+) {
+  // Save directly to cache, bypassing any strict duration checks
+  await saveToCache(trackName, artistName, lyricData);
+}
+
 async function nodeFetch(
   url: string,
 ): Promise<{ ok: boolean; status: number; data: string }> {
@@ -315,5 +324,23 @@ async function fetchSearch(
   } catch (err: any) {
     console.error(`[LRCLIB-Search] Exception: ${err.message}`);
     return null;
+  }
+}
+
+export async function searchAllLyrics(
+  trackName: string,
+  artistName: string
+): Promise<LRCLibResponse[]> {
+  const searchParams = new URLSearchParams({
+    track_name: trackName,
+    artist_name: artistName,
+  });
+  const searchUrl = `${LRCLIB_BASE}/search?${searchParams.toString()}`;
+  try {
+    const res = await nodeFetch(searchUrl);
+    if (!res.ok) return [];
+    return JSON.parse(res.data) as LRCLibResponse[];
+  } catch {
+    return [];
   }
 }
