@@ -20,7 +20,25 @@ export function LyricsPickerApp() {
       window.electronAPI
         .searchLyrics(trackName, artistName)
         .then((res) => {
-          setResults(res || []);
+          let fetchedResults = res || [];
+          
+          if (durationMs > 0) {
+            const expectedSec = Math.round(durationMs / 1000);
+            fetchedResults.sort((a, b) => {
+              // 1. Prioritize Synced Lyrics
+              const aHasSync = !!a.syncedLyrics;
+              const bHasSync = !!b.syncedLyrics;
+              if (aHasSync && !bHasSync) return -1;
+              if (!aHasSync && bHasSync) return 1;
+              
+              // 2. Sort by duration difference to expected
+              const aDiff = Math.abs(a.duration - expectedSec);
+              const bDiff = Math.abs(b.duration - expectedSec);
+              return aDiff - bDiff;
+            });
+          }
+
+          setResults(fetchedResults);
           setLoading(false);
         })
         .catch((err) => {
