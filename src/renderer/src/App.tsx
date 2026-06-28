@@ -15,18 +15,23 @@ const App: React.FC = () => {
     login,
   } = useSpotifyPlayer();
 
+  const [isLocked, setIsLocked] = React.useState(false);
+  const [bgOpacity, setBgOpacity] = React.useState(() => {
+    return Number(localStorage.getItem("bgOpacity") ?? 0.78);
+  });
+  const [syncOffsetMs, setSyncOffsetMs] = React.useState(0);
+
   const {
     lyrics,
     activeIndex,
     isLoading: lyricsLoading,
     hasLyrics,
     error: lyricsError,
-  } = useLyricSync(track, currentTimeMs);
+  } = useLyricSync(track, currentTimeMs + syncOffsetMs);
 
-  const [isLocked, setIsLocked] = React.useState(false);
-  const [bgOpacity, setBgOpacity] = React.useState(() => {
-    return Number(localStorage.getItem("bgOpacity") ?? 0.78);
-  });
+  React.useEffect(() => {
+    setSyncOffsetMs(0);
+  }, [track?.id]);
 
   React.useEffect(() => {
     localStorage.setItem("bgOpacity", bgOpacity.toString());
@@ -171,7 +176,12 @@ const App: React.FC = () => {
             hasLyrics={hasLyrics}
             error={lyricsError}
           />
-          <TrackInfo track={track} currentTimeMs={currentTimeMs} />
+          <TrackInfo 
+            track={track} 
+            currentTimeMs={currentTimeMs} 
+            syncOffsetMs={syncOffsetMs}
+            setSyncOffsetMs={setSyncOffsetMs}
+          />
         </>
       )}
     </div>
