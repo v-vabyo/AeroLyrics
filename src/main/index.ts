@@ -436,13 +436,13 @@ function setupIPC(): void {
 
   ipcMain.handle(
     "fetch-lyrics",
-    async (_, trackName, artistName, albumName, durationMs) => {
+    async (_, trackName, artistName, albumName, durationSeconds) => {
       try {
         return await fetchLyricsFromMain(
           trackName,
           artistName,
           albumName,
-          durationMs / 1000,
+          durationSeconds,
         );
       } catch (error) {
         console.error("[Main] Fetch lyrics failed:", error);
