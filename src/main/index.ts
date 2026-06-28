@@ -16,7 +16,7 @@ import {
 } from "./services/spotifyAuth";
 import { loadTokens, saveTokens, clearTokens } from "./services/tokenStore";
 import { loadSettings, saveSettings } from "./services/settingsStore";
-import { fetchLyricsFromMain } from "./services/lrclibMain";
+import { fetchLyricsFromMain, saveLyricsOffsetToCache } from "./services/lrclibMain";
 
 app.setName("AeroLyrics");
 app.setPath("userData", join(app.getPath("appData"), "AeroLyrics"));
@@ -410,6 +410,18 @@ function setupIPC(): void {
         albumName,
         durationSeconds,
       );
+    },
+  );
+
+  ipcMain.handle(
+    "save-lyrics-offset",
+    async (
+      _event,
+      trackName: string,
+      artistName: string,
+      offset: number,
+    ) => {
+      await saveLyricsOffsetToCache(trackName, artistName, offset);
     },
   );
 }

@@ -85,4 +85,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setClickThrough: (ignore: boolean) =>
     ipcRenderer.send("set-click-through", ignore),
   clearTokens: () => ipcRenderer.send("logout"),
+  saveLyricsOffset: (trackName: string, artistName: string, offset: number) =>
+    ipcRenderer.invoke("save-lyrics-offset", trackName, artistName, offset),
 });

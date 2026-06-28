@@ -24,6 +24,7 @@ export interface LRCLibResponse {
   instrumental: boolean;
   plainLyrics: string | null;
   syncedLyrics: string | null;
+  offset?: number;
 }
 
 export interface SpotifyTokens {
@@ -58,6 +59,7 @@ export interface ElectronAPI {
     refreshToken: string,
   ) => Promise<SpotifyTokens | null>;
   clearTokens: () => void;
+  saveLyricsOffset: (trackName: string, artistName: string, offset: number) => Promise<void>;
 }
 
 declare global {

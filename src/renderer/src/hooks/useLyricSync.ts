@@ -3,7 +3,12 @@ import type { SpotifyTrack, LyricLine } from "../types";
 import { fetchLyrics } from "../services/lrclibApi";
 import { parseLRC, findActiveLyricIndex } from "../services/lrcParser";
 
-const lyricsCache = new Map<string, LyricLine[]>();
+interface CachedLyrics {
+  lines: LyricLine[];
+  offset: number;
+}
+
+const lyricsCache = new Map<string, CachedLyrics>();
 
 interface UseLyricSyncReturn {
   lyrics: LyricLine[];
@@ -11,6 +16,7 @@ interface UseLyricSyncReturn {
   isLoading: boolean;
   hasLyrics: boolean;
   error: string | null;
+  offset: number;
 }
 
 export function useLyricSync(
@@ -18,6 +24,7 @@ export function useLyricSync(
   currentTimeMs: number,
 ): UseLyricSyncReturn {
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
+  const [initialOffset, setInitialOffset] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastTrackIdRef = useRef<string>("");
@@ -35,9 +42,10 @@ export function useLyricSync(
     const cached = lyricsCache.get(track.id);
     if (cached) {
       console.log(
-        `[LyricSync] Cache HIT for "${track.name}" (${cached.length} lines)`,
+        `[LyricSync] Cache HIT for "${track.name}" (${cached.lines.length} lines, offset: ${cached.offset})`,
       );
-      setLyrics(cached);
+      setLyrics(cached.lines);
+      setInitialOffset(cached.offset);
       setIsLoading(false);
       setError(null);
       return;
@@ -47,6 +55,7 @@ export function useLyricSync(
     setIsLoading(true);
     setError(null);
     setLyrics([]);
+    setInitialOffset(0);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -60,17 +69,22 @@ export function useLyricSync(
 
         if (response?.syncedLyrics) {
           const parsed = parseLRC(response.syncedLyrics);
-          lyricsCache.set(trackId, parsed);
+          const offset = response.offset || 0;
+          lyricsCache.set(trackId, { lines: parsed, offset });
           setLyrics(parsed);
+          setInitialOffset(offset);
         } else if (response?.plainLyrics) {
           const lines = response.plainLyrics
             .split("\n")
             .filter((l) => l.trim());
           const parsed = lines.map((text, i) => ({ time: i * 5, text }));
-          lyricsCache.set(trackId, parsed);
+          const offset = response.offset || 0;
+          lyricsCache.set(trackId, { lines: parsed, offset });
           setLyrics(parsed);
+          setInitialOffset(offset);
         } else {
           setLyrics([]);
+          setInitialOffset(0);
           setError("No lyrics found");
         }
       })
@@ -102,5 +116,6 @@ export function useLyricSync(
     isLoading,
     hasLyrics: lyrics.length > 0,
     error,
+    offset: initialOffset,
   };
 }

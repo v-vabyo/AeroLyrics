@@ -27,11 +27,24 @@ const App: React.FC = () => {
     isLoading: lyricsLoading,
     hasLyrics,
     error: lyricsError,
+    offset: initialOffset,
   } = useLyricSync(track, currentTimeMs + syncOffsetMs);
 
   React.useEffect(() => {
-    setSyncOffsetMs(0);
-  }, [track?.id]);
+    setSyncOffsetMs(initialOffset || 0);
+  }, [track?.id, initialOffset]);
+
+  const handleOffsetChange = React.useCallback(
+    (newOffset: number) => {
+      setSyncOffsetMs(newOffset);
+      if (track && window.electronAPI && window.electronAPI.saveLyricsOffset) {
+        window.electronAPI.saveLyricsOffset(track.name, track.artist, newOffset).catch(err => {
+          console.error("Failed to save offset:", err);
+        });
+      }
+    },
+    [track]
+  );
 
   React.useEffect(() => {
     localStorage.setItem("bgOpacity", bgOpacity.toString());
@@ -180,7 +193,7 @@ const App: React.FC = () => {
             track={track} 
             currentTimeMs={currentTimeMs} 
             syncOffsetMs={syncOffsetMs}
-            setSyncOffsetMs={setSyncOffsetMs}
+            onOffsetChange={handleOffsetChange}
           />
         </>
       )}

@@ -15,6 +15,7 @@ interface LRCLibResponse {
   instrumental: boolean;
   plainLyrics: string | null;
   syncedLyrics: string | null;
+  offset?: number;
 }
 
 const getCacheDir = () => join(app.getPath("userData"), "Lyrics");
@@ -69,6 +70,18 @@ async function saveToCache(
     await fs.writeFile(filePath, JSON.stringify(result, null, 2), "utf-8");
   } catch (e) {
     console.error("[LRCLIB-Main] Failed to save cache to disk:", e);
+  }
+}
+
+export async function saveLyricsOffsetToCache(
+  trackName: string,
+  artistName: string,
+  offset: number
+) {
+  const cached = await loadFromCache(trackName, artistName);
+  if (cached) {
+    cached.offset = offset;
+    await saveToCache(trackName, artistName, cached);
   }
 }
 
