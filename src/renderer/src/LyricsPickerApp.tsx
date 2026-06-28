@@ -103,7 +103,10 @@ export function LyricsPickerApp() {
             <div
               key={`${r.id}-${i}`}
               onClick={() => {
-                if (!saving && !isPreviewing) setPreviewIndex(i);
+                if (!saving && !isPreviewing) {
+                  setPreviewIndex(i);
+                  window.electronAPI.previewLyric(r);
+                }
               }}
               style={{
                 padding: "12px",
@@ -184,7 +187,11 @@ export function LyricsPickerApp() {
                   </div>
                   <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setPreviewIndex(null); }}
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setPreviewIndex(null); 
+                        window.electronAPI.clearPreview();
+                      }}
                       style={{ padding: "6px 12px", backgroundColor: "transparent", color: "white", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "4px", cursor: "pointer", fontSize: "13px" }}
                     >
                       Cancel

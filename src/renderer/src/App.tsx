@@ -21,6 +21,7 @@ const App: React.FC = () => {
   });
   const [syncOffsetMs, setSyncOffsetMs] = React.useState(0);
   const [lyricRefetchTrigger, setLyricRefetchTrigger] = React.useState(0);
+  const [previewLyric, setPreviewLyric] = React.useState<LRCLibResponse | null>(null);
 
   const {
     lyrics,
@@ -29,7 +30,7 @@ const App: React.FC = () => {
     hasLyrics,
     error: lyricsError,
     offset: initialOffset,
-  } = useLyricSync(track, currentTimeMs + syncOffsetMs, lyricRefetchTrigger);
+  } = useLyricSync(track, currentTimeMs + syncOffsetMs, lyricRefetchTrigger, previewLyric);
 
   React.useEffect(() => {
     setSyncOffsetMs(initialOffset || 0);
@@ -74,6 +75,23 @@ const App: React.FC = () => {
     if (window.electronAPI && window.electronAPI.onForceLyricRefetch) {
       return window.electronAPI.onForceLyricRefetch(() => {
         setLyricRefetchTrigger((prev) => prev + 1);
+        setPreviewLyric(null); // Clear preview on refetch
+      });
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (window.electronAPI && window.electronAPI.onPreviewLyric) {
+      return window.electronAPI.onPreviewLyric((data) => {
+        setPreviewLyric(data);
+      });
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (window.electronAPI && window.electronAPI.onClearPreview) {
+      return window.electronAPI.onClearPreview(() => {
+        setPreviewLyric(null);
       });
     }
   }, []);

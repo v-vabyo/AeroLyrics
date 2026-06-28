@@ -107,4 +107,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return () => ipcRenderer.removeListener("force-lyric-refetch", listener);
   },
   notifyLyricSelected: () => ipcRenderer.send("lyric-selected"),
+  previewLyric: (lyricData: any) => ipcRenderer.send("preview-lyric", lyricData),
+  clearPreview: () => ipcRenderer.send("clear-preview"),
+  onPreviewLyric: (callback: (lyricData: any) => void) => {
+    const listener = (_event: any, data: any) => callback(data);
+    ipcRenderer.on("preview-lyric-data", listener);
+    return () => ipcRenderer.removeListener("preview-lyric-data", listener);
+  },
+  onClearPreview: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("clear-preview", listener);
+    return () => ipcRenderer.removeListener("clear-preview", listener);
+  },
 });

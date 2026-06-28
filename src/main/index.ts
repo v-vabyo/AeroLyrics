@@ -50,6 +50,9 @@ function openLyricsPickerWindow(trackName: string, artistName: string, durationM
 
   lyricsPickerWindow.on("closed", () => {
     lyricsPickerWindow = null;
+    if (mainWindow) {
+      mainWindow.webContents.send("clear-preview");
+    }
   });
 
   const query = `window=picker&trackName=${encodeURIComponent(trackName)}&artistName=${encodeURIComponent(artistName)}&durationMs=${durationMs}`;
@@ -480,6 +483,18 @@ function setupIPC(): void {
     }
     if (lyricsPickerWindow) {
       lyricsPickerWindow.close();
+    }
+  });
+
+  ipcMain.on("preview-lyric", (_, lyricData) => {
+    if (mainWindow) {
+      mainWindow.webContents.send("preview-lyric-data", lyricData);
+    }
+  });
+
+  ipcMain.on("clear-preview", () => {
+    if (mainWindow) {
+      mainWindow.webContents.send("clear-preview");
     }
   });
 

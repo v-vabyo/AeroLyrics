@@ -66,6 +66,10 @@ export interface ElectronAPI {
   openLyricsPicker: (trackName: string, artistName: string, durationMs: number) => void;
   onForceLyricRefetch: (callback: () => void) => () => void;
   notifyLyricSelected: () => void;
+  previewLyric: (lyricData: LRCLibResponse) => void;
+  clearPreview: () => void;
+  onPreviewLyric: (callback: (lyricData: LRCLibResponse) => void) => () => void;
+  onClearPreview: (callback: () => void) => () => void;
 }
 
 declare global {

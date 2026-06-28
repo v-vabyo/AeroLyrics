@@ -23,6 +23,7 @@ export function useLyricSync(
   track: SpotifyTrack | null,
   currentTimeMs: number,
   refetchTrigger: number = 0,
+  previewLyric?: LRCLibResponse | null,
 ): UseLyricSyncReturn {
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [initialOffset, setInitialOffset] = useState(0);
@@ -37,8 +38,14 @@ export function useLyricSync(
     const isNewTrack = track?.id !== lastTrackIdRef.current;
     const isForcedRefetch = refetchTrigger !== lastRefetchRef.current;
 
-    if (!track) return;
-    if (!isNewTrack && !isForcedRefetch) return;
+    if (!track) {
+      setLyrics([]);
+      setInitialOffset(0);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+    if (!isNewTrack && !isForcedRefetch && !previewLyric) return;
 
     if (isForcedRefetch && track.id) {
       lyricsCache.delete(track.id);
@@ -49,6 +56,27 @@ export function useLyricSync(
 
     if (abortRef.current) {
       abortRef.current.abort();
+    }
+
+    if (previewLyric) {
+      console.log(`[LyricSync] Using live PREVIEW for "${track.name}"`);
+      if (previewLyric.syncedLyrics) {
+        const parsed = parseLRC(previewLyric.syncedLyrics);
+        setLyrics(parsed);
+        setInitialOffset(previewLyric.offset || 0);
+      } else if (previewLyric.plainLyrics) {
+        const lines = previewLyric.plainLyrics.split("\n").filter((l) => l.trim());
+        const parsed = lines.map((text, i) => ({ time: i * 5, text }));
+        setLyrics(parsed);
+        setInitialOffset(previewLyric.offset || 0);
+      } else {
+        setLyrics([]);
+        setInitialOffset(0);
+        setError("Preview has no lyrics");
+      }
+      setIsLoading(false);
+      setError(null);
+      return;
     }
 
     const cached = lyricsCache.get(track.id);
@@ -102,8 +130,9 @@ export function useLyricSync(
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
-        setError("Failed to load lyrics");
+        setError(err.message || "Failed to load lyrics");
         setLyrics([]);
+        setInitialOffset(0);
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -114,7 +143,7 @@ export function useLyricSync(
     return () => {
       controller.abort();
     };
-  }, [track?.id, track?.name, track?.artist, track?.album, track?.durationMs]);
+  }, [track?.id, refetchTrigger, previewLyric]);
 
   const currentTimeSec = currentTimeMs / 1000;
   const activeIndex = useMemo(
