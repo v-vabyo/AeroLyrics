@@ -1,7 +1,7 @@
 # AeroLyrics 🎵
 
 <p align="center">
-  <img src="docs/screenshot-1.png" alt="AeroLyrics Screenshot" width="800">
+  <img src="docs/screenshot-1.jpg" alt="AeroLyrics Screenshot" width="800">
 </p>
 
 AeroLyrics is a frameless, floating Spotify lyrics widget built for Windows. It strictly follows the currently playing Spotify track and displays highly accurate synchronized lyrics on the desktop. It is designed to be unobtrusive and customizable, catering to power users who want a seamless desktop lyric experience.
