@@ -419,9 +419,12 @@ function setupIPC(): void {
         saveTokens(tokens);
       }
       return tokens;
-    } catch (error) {
+    } catch (error: any) {
       console.error("[Main] Refresh token failed:", error);
-      return null;
+      if (error && error.message && (error.message.includes("400") || error.message.includes("401"))) {
+        return null;
+      }
+      throw error;
     }
   });
 
