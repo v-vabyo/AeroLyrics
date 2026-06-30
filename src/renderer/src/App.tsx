@@ -1,6 +1,6 @@
 import React from "react";
 import { useSpotifyPlayer } from "./hooks/useSpotifyPlayer";
-import { useLyricSync } from "./hooks/useLyricSync";
+import { useLyricSync, updateLyricCacheOffset } from "./hooks/useLyricSync";
 import LyricsDisplay from "./components/LyricsDisplay";
 import TrackInfo from "./components/TrackInfo";
 import AuthScreen from "./components/AuthScreen";
@@ -39,6 +39,9 @@ const App: React.FC = () => {
   const handleOffsetChange = React.useCallback(
     (newOffset: number) => {
       setSyncOffsetMs(newOffset);
+      if (track) {
+        updateLyricCacheOffset(track.id, newOffset);
+      }
       if (track && window.electronAPI && window.electronAPI.saveLyricsOffset) {
         window.electronAPI.saveLyricsOffset(track.name, track.artist, newOffset).catch(err => {
           console.error("Failed to save offset:", err);
@@ -53,6 +56,9 @@ const App: React.FC = () => {
       return window.electronAPI.onShortcutOffsetChange((delta) => {
         setSyncOffsetMs((prev) => {
           const newOffset = prev + delta;
+          if (track) {
+            updateLyricCacheOffset(track.id, newOffset);
+          }
           if (track && window.electronAPI.saveLyricsOffset) {
             window.electronAPI.saveLyricsOffset(track.name, track.artist, newOffset).catch(err => {
               console.error("Failed to save offset from shortcut:", err);

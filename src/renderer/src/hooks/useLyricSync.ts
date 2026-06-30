@@ -10,6 +10,13 @@ interface CachedLyrics {
 
 const lyricsCache = new Map<string, CachedLyrics>();
 
+export function updateLyricCacheOffset(trackId: string, newOffset: number) {
+  const cached = lyricsCache.get(trackId);
+  if (cached) {
+    cached.offset = newOffset;
+  }
+}
+
 interface UseLyricSyncReturn {
   lyrics: LyricLine[];
   activeIndex: number;
