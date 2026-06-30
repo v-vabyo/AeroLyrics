@@ -46,7 +46,7 @@ async function loadFromCache(
   const cached = memoryCache[cacheKey];
   
   if (cached) {
-    if (Math.abs(cached.duration - expectedDuration) === 0) return cached;
+    if (Math.abs(cached.duration - expectedDuration) <= 2) return cached;
     delete memoryCache[cacheKey]; // Invalid duration, clear memory cache
   }
 
@@ -55,7 +55,7 @@ async function loadFromCache(
     const filePath = getCachePath(trackName, artistName);
     const data = await fs.readFile(filePath, "utf-8");
     const result = JSON.parse(data) as LRCLibResponse;
-    if (Math.abs(result.duration - expectedDuration) === 0) {
+    if (Math.abs(result.duration - expectedDuration) <= 2) {
       memoryCache[cacheKey] = result;
       return result;
     } else {
